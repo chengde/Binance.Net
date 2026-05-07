@@ -1,4 +1,4 @@
-﻿using Binance.Net.Objects.Models.Futures;
+using Binance.Net.Objects.Models.Futures;
 
 namespace Binance.Net.Interfaces.Clients.CoinFuturesApi
 {
@@ -9,10 +9,15 @@ namespace Binance.Net.Interfaces.Clients.CoinFuturesApi
     {
         /// <summary>
         /// Query Client If The New User.
-        /// <para><a href="https://binance-docs.github.io/apiAgent-API-EN/api_rebate_endpoints_futures_EN/" /></para>
-        /// <para><a href="https://binance-docs.github.io/apiAgent-API-CN/api_rebate_endpoints_futures_CN/" /></para>
+        /// <para>
+        /// Docs:<br />
+        /// <a href="https://binance-docs.github.io/apiAgent-API-EN/api_rebate_endpoints_futures_EN/" /><br />
+        /// <a href="https://binance-docs.github.io/apiAgent-API-CN/api_rebate_endpoints_futures_CN/" /><br />
+        /// Endpoint:<br />
+        /// GET /fapi/v1/apiReferral/ifNewUser
+        /// </para>
         /// </summary>
-        /// <param name="brokerId">Api Broker Id</param>
+        /// <param name="brokerId">["<c>brokerId</c>"] Api Broker Id</param>
         /// <param name="receiveWindow">The receive window for which this request is active. When the request takes longer than this to complete the server will reject the request</param>
         /// <param name="ct">Cancellation token</param>
         /// <returns>USER DATA</returns>
@@ -21,3 +26,4 @@ namespace Binance.Net.Interfaces.Clients.CoinFuturesApi
             CancellationToken ct = default);
     }
 }
+

@@ -104,19 +104,16 @@ namespace Binance.Net.Clients.SpotApi
 
         /// <inheritdoc />
         public async Task<CallResult<UpdateSubscription>> SubscribeToUserDataUpdatesAsync(
-            string listenKey,
             Action<DataEvent<BinanceStreamOrderUpdate>>? onOrderUpdateMessage = null,
             Action<DataEvent<BinanceStreamOrderList>>? onOcoOrderUpdateMessage = null,
             Action<DataEvent<BinanceStreamPositionsUpdate>>? onAccountPositionMessage = null,
             Action<DataEvent<BinanceStreamBalanceUpdate>>? onAccountBalanceUpdate = null,
-            Action<DataEvent<BinanceStreamEvent>>? onListenKeyExpired = null,
             Action<DataEvent<BinanceStreamEvent>>? onUserDataStreamTerminated = null,
             Action<DataEvent<BinanceStreamBalanceLockUpdate>>? onBalanceLockUpdate = null,
             CancellationToken ct = default)
         {
-            listenKey.ValidateNotNull(nameof(listenKey));
-            var subscription = new BinanceSpotUserDataSubscription(_logger, listenKey, onOrderUpdateMessage, onOcoOrderUpdateMessage, onAccountPositionMessage, onAccountBalanceUpdate, onListenKeyExpired, onUserDataStreamTerminated, onBalanceLockUpdate, false);
-            return await _client.SubscribeInternalAsync(_client.BaseAddress, subscription, ct).ConfigureAwait(false);
+            var subscription = new BinanceSpotUserDataSubscription(_logger, _client, onOrderUpdateMessage, onOcoOrderUpdateMessage, onAccountPositionMessage, onAccountBalanceUpdate, onUserDataStreamTerminated, onBalanceLockUpdate, false);
+            return await _client.SubscribeInternal2Async(_client.ClientOptions.Environment.SpotSocketApiAddress.AppendPath("ws-api/v3"), subscription, ct).ConfigureAwait(false);
         }
         #endregion
 
@@ -133,9 +130,41 @@ namespace Binance.Net.Clients.SpotApi
                 throw new NotSupportedException("RiskData base address not configured");
 
             listenKey.ValidateNotNull(nameof(listenKey));
-            var subscription = new BinanceMarginRiskDataSubscription(_logger, listenKey, onMarginCallUpdate, onLiabilityUpdate, false);
+            var subscription = new BinanceMarginRiskDataSubscription(_logger, _client, listenKey, onMarginCallUpdate, onLiabilityUpdate, false);
             return await _client.SubscribeInternalAsync(_riskDataBaseAddress, subscription, ct).ConfigureAwait(false);
         }
+        #endregion
+
+        #region Margin User Data Stream
+        public async Task<CallResult<UpdateSubscription>> SubscribeToMarginUserDataUpdatesAsync(
+            string listenToken,
+            Action<DataEvent<BinanceStreamOrderUpdate>>? onOrderUpdateMessage = null,
+            Action<DataEvent<BinanceStreamOrderList>>? onOcoOrderUpdateMessage = null,
+            Action<DataEvent<BinanceStreamPositionsUpdate>>? onAccountPositionMessage = null,
+            Action<DataEvent<BinanceStreamBalanceUpdate>>? onAccountBalanceUpdate = null,
+            Action<DataEvent<BinanceStreamEvent>>? onUserDataStreamTerminated = null,
+            CancellationToken ct = default)
+        {
+            var subscription = new BinanceMarginUserDataSubscription(_logger, _client, listenToken, onOrderUpdateMessage, onOcoOrderUpdateMessage, onAccountPositionMessage, onAccountBalanceUpdate, onUserDataStreamTerminated);
+
+            return await _client.SubscribeInternal2Async(_client.ClientOptions.Environment.SpotSocketApiAddress.AppendPath("ws-api/v3"), subscription, ct).ConfigureAwait(false);
+        }
+
+        public async Task<CallResult> UpdateMarginUserDataTokenAsync(string newListenToken, CancellationToken ct = default)
+        {
+            var marginSubscriptions = _client.GetMarginUserDataSubscriptions();
+            var tasks = new List<Task<CallResult>>();
+            foreach (var marginSubscription in marginSubscriptions)
+                tasks.Add(marginSubscription.RenewTokenAsync(newListenToken));
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+            var error = tasks.FirstOrDefault(x => x.Result.Error != null);
+            if (error != null)
+                return new CallResult(error.Result.Error);
+
+            return CallResult.SuccessResult;
+        }
+
         #endregion
 
         #endregion

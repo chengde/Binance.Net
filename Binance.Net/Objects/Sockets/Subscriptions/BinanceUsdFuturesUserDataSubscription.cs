@@ -1,9 +1,12 @@
-﻿using Binance.Net.Objects.Internal;
+﻿using Binance.Net.Clients.CoinFuturesApi;
+using Binance.Net.Clients.UsdFuturesApi;
+using Binance.Net.Objects.Internal;
 using Binance.Net.Objects.Models;
 using Binance.Net.Objects.Models.Futures.Socket;
 using CryptoExchange.Net.Objects.Sockets;
 using CryptoExchange.Net.Sockets;
 using CryptoExchange.Net.Sockets.Default;
+using CryptoExchange.Net.Sockets.Default.Routing;
 
 namespace Binance.Net.Objects.Sockets
 {
@@ -11,6 +14,7 @@ namespace Binance.Net.Objects.Sockets
     internal class BinanceUsdFuturesUserDataSubscription : Subscription
     {
         private readonly string _lk;
+        private readonly BinanceSocketClientUsdFuturesApi _client;
 
         private readonly Action<DataEvent<BinanceFuturesStreamOrderUpdate>>? _orderHandler;
         private readonly Action<DataEvent<BinanceFuturesStreamTradeUpdate>>? _tradeHandler;
@@ -28,6 +32,7 @@ namespace Binance.Net.Objects.Sockets
         /// </summary>
         public BinanceUsdFuturesUserDataSubscription(
             ILogger logger,
+            BinanceSocketClientUsdFuturesApi client,
             string listenKey,
             Action<DataEvent<BinanceFuturesStreamOrderUpdate>>? orderHandler,
             Action<DataEvent<BinanceFuturesStreamTradeUpdate>>? tradeHandler,
@@ -40,6 +45,7 @@ namespace Binance.Net.Objects.Sockets
             Action<DataEvent<BinanceConditionOrderTriggerRejectUpdate>>? condOrderHandler,
             Action<DataEvent<BinanceAlgoOrderUpdate>>? onAlgoOrderUpdate) : base(logger, false)
         {
+            _client = client;
             _orderHandler = orderHandler;
             _configHandler = configHandler;
             _marginHandler = marginHandler;
@@ -54,29 +60,16 @@ namespace Binance.Net.Objects.Sockets
             _lk = listenKey;
 
             MessageRouter = MessageRouter.Create([
-                MessageRoute<BinanceCombinedStream<BinanceFuturesStreamConfigUpdate>>.CreateWithTopicFilter("ACCOUNT_CONFIG_UPDATE",_lk, DoHandleMessage),
-                MessageRoute<BinanceCombinedStream<BinanceFuturesStreamMarginUpdate>>.CreateWithTopicFilter("MARGIN_CALL",_lk, DoHandleMessage),
-                MessageRoute<BinanceCombinedStream<BinanceFuturesStreamAccountUpdate>>.CreateWithTopicFilter("ACCOUNT_UPDATE",_lk, DoHandleMessage),
-                MessageRoute<BinanceCombinedStream<BinanceFuturesStreamOrderUpdate>>.CreateWithTopicFilter("ORDER_TRADE_UPDATE",_lk, DoHandleMessage),
-                MessageRoute<BinanceCombinedStream<BinanceFuturesStreamTradeUpdate>>.CreateWithTopicFilter("TRADE_LITE", _lk,DoHandleMessage),
-                MessageRoute<BinanceCombinedStream<BinanceStreamEvent>>.CreateWithTopicFilter("listenKeyExpired",_lk, DoHandleMessage),
-                MessageRoute<BinanceCombinedStream<BinanceStrategyUpdate>>.CreateWithTopicFilter("STRATEGY_UPDATE",_lk, DoHandleMessage),
-                MessageRoute<BinanceCombinedStream<BinanceGridUpdate>>.CreateWithTopicFilter("GRID_UPDATE", _lk,DoHandleMessage),
-                MessageRoute<BinanceCombinedStream<BinanceConditionOrderTriggerRejectUpdate>>.CreateWithTopicFilter("CONDITIONAL_ORDER_TRIGGER_REJECT",_lk, DoHandleMessage),
-                MessageRoute<BinanceCombinedStream<BinanceAlgoOrderUpdate>>.CreateWithTopicFilter("ALGO_UPDATE", _lk, DoHandleMessage),
-                ]);
-
-            MessageMatcher = MessageMatcher.Create([
-                new MessageHandlerLink<BinanceCombinedStream<BinanceFuturesStreamConfigUpdate>>(_lk + "ACCOUNT_CONFIG_UPDATE", DoHandleMessage),
-                new MessageHandlerLink<BinanceCombinedStream<BinanceFuturesStreamMarginUpdate>>(_lk + "MARGIN_CALL", DoHandleMessage),
-                new MessageHandlerLink<BinanceCombinedStream<BinanceFuturesStreamAccountUpdate>>(_lk + "ACCOUNT_UPDATE", DoHandleMessage),
-                new MessageHandlerLink<BinanceCombinedStream<BinanceFuturesStreamOrderUpdate>>(_lk + "ORDER_TRADE_UPDATE", DoHandleMessage),
-                new MessageHandlerLink<BinanceCombinedStream<BinanceFuturesStreamTradeUpdate>>(_lk + "TRADE_LITE", DoHandleMessage),
-                new MessageHandlerLink<BinanceCombinedStream<BinanceStreamEvent>>(_lk + "listenKeyExpired", DoHandleMessage),
-                new MessageHandlerLink<BinanceCombinedStream<BinanceStrategyUpdate>>(_lk + "STRATEGY_UPDATE", DoHandleMessage),
-                new MessageHandlerLink<BinanceCombinedStream<BinanceGridUpdate>>(_lk + "GRID_UPDATE", DoHandleMessage),
-                new MessageHandlerLink<BinanceCombinedStream<BinanceConditionOrderTriggerRejectUpdate>>(_lk + "CONDITIONAL_ORDER_TRIGGER_REJECT", DoHandleMessage),
-                new MessageHandlerLink<BinanceCombinedStream<BinanceAlgoOrderUpdate>>(_lk + "ALGO_UPDATE", DoHandleMessage),
+                MessageRoute<BinanceCombinedStream<BinanceFuturesStreamConfigUpdate>>.CreateWithoutTopicFilter("ACCOUNT_CONFIG_UPDATE", DoHandleMessage),
+                MessageRoute<BinanceCombinedStream<BinanceFuturesStreamMarginUpdate>>.CreateWithoutTopicFilter("MARGIN_CALL", DoHandleMessage),
+                MessageRoute<BinanceCombinedStream<BinanceFuturesStreamAccountUpdate>>.CreateWithoutTopicFilter("ACCOUNT_UPDATE", DoHandleMessage),
+                MessageRoute<BinanceCombinedStream<BinanceFuturesStreamOrderUpdate>>.CreateWithoutTopicFilter("ORDER_TRADE_UPDATE", DoHandleMessage),
+                MessageRoute<BinanceCombinedStream<BinanceFuturesStreamTradeUpdate>>.CreateWithoutTopicFilter("TRADE_LITE", DoHandleMessage),
+                MessageRoute<BinanceCombinedStream<BinanceStreamEvent>>.CreateWithoutTopicFilter("listenKeyExpired", DoHandleMessage),
+                MessageRoute<BinanceCombinedStream<BinanceStrategyUpdate>>.CreateWithoutTopicFilter("STRATEGY_UPDATE", DoHandleMessage),
+                MessageRoute<BinanceCombinedStream<BinanceGridUpdate>>.CreateWithoutTopicFilter("GRID_UPDATE", DoHandleMessage),
+                MessageRoute<BinanceCombinedStream<BinanceConditionOrderTriggerRejectUpdate>>.CreateWithoutTopicFilter("CONDITIONAL_ORDER_TRIGGER_REJECT", DoHandleMessage),
+                MessageRoute<BinanceCombinedStream<BinanceAlgoOrderUpdate>>.CreateWithoutTopicFilter("ALGO_UPDATE", DoHandleMessage),
                 ]);
         }
 
@@ -104,117 +97,137 @@ namespace Binance.Net.Objects.Sockets
 
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceCombinedStream<BinanceFuturesStreamConfigUpdate> message)
         {
+            _client.UpdateTimeOffset(message.Data.EventTime);
+
             message.Data.ListenKey = message.Stream;
             _configHandler?.Invoke(
                 new DataEvent<BinanceFuturesStreamConfigUpdate>(BinanceExchange.ExchangeName, message.Data, receiveTime, originalData)
                     .WithUpdateType(SocketUpdateType.Update)
                     .WithStreamId(message.Stream)
-                    .WithDataTimestamp(message.Data.EventTime)
+                    .WithDataTimestamp(message.Data.EventTime, _client.GetTimeOffset())
                 );
             return CallResult.SuccessResult;
         }
 
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceCombinedStream<BinanceFuturesStreamMarginUpdate> message)
         {
+            _client.UpdateTimeOffset(message.Data.EventTime);
+
             message.Data.ListenKey = message.Stream;
             _marginHandler?.Invoke(
                 new DataEvent<BinanceFuturesStreamMarginUpdate>(BinanceExchange.ExchangeName, message.Data, receiveTime, originalData)
                     .WithUpdateType(SocketUpdateType.Update)
                     .WithStreamId(message.Stream)
-                    .WithDataTimestamp(message.Data.EventTime)
+                    .WithDataTimestamp(message.Data.EventTime, _client.GetTimeOffset())
                 );
             return CallResult.SuccessResult;
         }
 
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceCombinedStream<BinanceFuturesStreamAccountUpdate> message)
         {
+            _client.UpdateTimeOffset(message.Data.EventTime);
+
             message.Data.ListenKey = message.Stream;
             _accountHandler?.Invoke(
                 new DataEvent<BinanceFuturesStreamAccountUpdate>(BinanceExchange.ExchangeName, message.Data, receiveTime, originalData)
                     .WithUpdateType(SocketUpdateType.Update)
                     .WithStreamId(message.Stream)
-                    .WithDataTimestamp(message.Data.EventTime)
+                    .WithDataTimestamp(message.Data.EventTime, _client.GetTimeOffset())
                 );
             return CallResult.SuccessResult;
         }
 
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceCombinedStream<BinanceFuturesStreamOrderUpdate> message)
         {
+            _client.UpdateTimeOffset(message.Data.EventTime);
+
             message.Data.ListenKey = message.Stream;
             _orderHandler?.Invoke(
                 new DataEvent<BinanceFuturesStreamOrderUpdate>(BinanceExchange.ExchangeName, message.Data, receiveTime, originalData)
                     .WithUpdateType(SocketUpdateType.Update)
                     .WithStreamId(message.Stream)
                     .WithSymbol(message.Data.UpdateData.Symbol)
-                    .WithDataTimestamp(message.Data.EventTime)
+                    .WithDataTimestamp(message.Data.EventTime, _client.GetTimeOffset())
                 );
             return CallResult.SuccessResult;
         }
 
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceCombinedStream<BinanceStreamEvent> message)
         {
+            _client.UpdateTimeOffset(message.Data.EventTime);
+
             _listenkeyHandler?.Invoke(
                 new DataEvent<BinanceStreamEvent>(BinanceExchange.ExchangeName, message.Data, receiveTime, originalData)
                     .WithUpdateType(SocketUpdateType.Update)
                     .WithStreamId(message.Stream)
-                    .WithDataTimestamp(message.Data.EventTime)
+                    .WithDataTimestamp(message.Data.EventTime, _client.GetTimeOffset())
                 );
             return CallResult.SuccessResult;
         }
 
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceCombinedStream<BinanceStrategyUpdate> message)
         {
+            _client.UpdateTimeOffset(message.Data.EventTime);
+
             _strategyHandler?.Invoke(
                 new DataEvent<BinanceStrategyUpdate>(BinanceExchange.ExchangeName, message.Data, receiveTime, originalData)
                     .WithUpdateType(SocketUpdateType.Update)
                     .WithStreamId(message.Stream)
-                    .WithDataTimestamp(message.Data.EventTime)
+                    .WithDataTimestamp(message.Data.EventTime, _client.GetTimeOffset())
                 );
             return CallResult.SuccessResult;
         }
 
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceCombinedStream<BinanceGridUpdate> message)
         {
+            _client.UpdateTimeOffset(message.Data.EventTime);
+
             _gridHandler?.Invoke(
                 new DataEvent<BinanceGridUpdate>(BinanceExchange.ExchangeName, message.Data, receiveTime, originalData)
                     .WithUpdateType(SocketUpdateType.Update)
                     .WithStreamId(message.Stream)
-                    .WithDataTimestamp(message.Data.EventTime)
+                    .WithDataTimestamp(message.Data.EventTime, _client.GetTimeOffset())
                 );
             return CallResult.SuccessResult;
         }
 
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceCombinedStream<BinanceConditionOrderTriggerRejectUpdate> message)
         {
+            _client.UpdateTimeOffset(message.Data.EventTime);
+
             _condOrderHandler?.Invoke(
                 new DataEvent<BinanceConditionOrderTriggerRejectUpdate>(BinanceExchange.ExchangeName, message.Data, receiveTime, originalData)
                     .WithUpdateType(SocketUpdateType.Update)
                     .WithStreamId(message.Stream)
-                    .WithDataTimestamp(message.Data.EventTime)
+                    .WithDataTimestamp(message.Data.EventTime, _client.GetTimeOffset())
                 );
             return CallResult.SuccessResult;
         }
 
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceCombinedStream<BinanceFuturesStreamTradeUpdate> message)
         {
+            _client.UpdateTimeOffset(message.Data.EventTime);
+
             _tradeHandler?.Invoke(
                 new DataEvent<BinanceFuturesStreamTradeUpdate>(BinanceExchange.ExchangeName, message.Data, receiveTime, originalData)
                     .WithUpdateType(SocketUpdateType.Update)
                     .WithStreamId(message.Stream)
                     .WithSymbol(message.Data.Symbol)
-                    .WithDataTimestamp(message.Data.EventTime)
+                    .WithDataTimestamp(message.Data.EventTime, _client.GetTimeOffset())
                 );
             return CallResult.SuccessResult;
         }
 
         public CallResult DoHandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceCombinedStream<BinanceAlgoOrderUpdate> message)
         {
+            _client.UpdateTimeOffset(message.Data.EventTime);
+
             _algoOrderHandler?.Invoke(
                 new DataEvent<BinanceAlgoOrderUpdate>(BinanceExchange.ExchangeName, message.Data, receiveTime, originalData)
                     .WithUpdateType(SocketUpdateType.Update)
                     .WithStreamId(message.Stream)
                     .WithSymbol(message.Data.Order.Symbol)
-                    .WithDataTimestamp(message.Data.EventTime)
+                    .WithDataTimestamp(message.Data.EventTime, _client.GetTimeOffset())
                 );
             return CallResult.SuccessResult;
         }

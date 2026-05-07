@@ -1,4 +1,4 @@
-﻿using Binance.Net.Enums;
+using Binance.Net.Enums;
 
 namespace Binance.Net.Objects.Models.Spot.AutoInvest
 {
@@ -9,14 +9,15 @@ namespace Binance.Net.Objects.Models.Spot.AutoInvest
     public record BinanceAutoInvestOneTimeTransactionStatus
     {
         /// <summary>
-        /// Transaction id
+        /// ["<c>transactionId</c>"] The transaction identifier.
         /// </summary>
         [JsonPropertyName("transactionId")]
         public long TransactionId { get; set; }
         /// <summary>
-        /// Status
+        /// ["<c>status</c>"] The transaction status.
         /// </summary>
         [JsonPropertyName("status")]
         public AutoInvestOneTimeTransactionStatus Status { get; set; }
     }
 }
+

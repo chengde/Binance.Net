@@ -3,6 +3,7 @@ using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Clients;
 using CryptoExchange.Net.Sockets;
 using CryptoExchange.Net.Sockets.Default;
+using CryptoExchange.Net.Sockets.Default.Routing;
 
 namespace Binance.Net.Objects.Sockets
 {
@@ -14,7 +15,6 @@ namespace Binance.Net.Objects.Sockets
         {
             _client = client;
             MessageRouter = MessageRouter.CreateWithoutTopicFilter<BinanceResponse<BinanceReplaceOrderResult>>(request.Id.ToString(), HandleMessage);
-            MessageMatcher = MessageMatcher.Create<BinanceResponse<BinanceReplaceOrderResult>>(request.Id.ToString(), HandleMessage);
         }
 
         public CallResult<BinanceResponse<BinanceReplaceOrderResult>> HandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, BinanceResponse<BinanceReplaceOrderResult> message)
@@ -30,7 +30,7 @@ namespace Binance.Net.Objects.Sockets
                     }, originalData);
                 }
 
-                if (message.Status == 400)
+                if (message.Status == 400 || message.Status == 409)
                 {
                     if (message.Error!.Data == null)
                         return new CallResult<BinanceResponse<BinanceReplaceOrderResult>>(new ServerError(message.Error.Code, _client.GetErrorInfo(message.Error.Code, message.Error.Message)));

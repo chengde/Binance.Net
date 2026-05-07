@@ -46,8 +46,7 @@ The NuGet package files are added along side the source with the latest GitHub r
 
 	
 ## How to use
-*REST Endpoints*  
-
+*Basic request:*
 ```csharp
 // Get the ETH/USDT ticker via rest request
 var restClient = new BinanceRestClient();
@@ -55,8 +54,24 @@ var tickerResult = await restClient.SpotApi.ExchangeData.GetTickerAsync("ETHUSDT
 var lastPrice = tickerResult.Data.LastPrice;
 ```
 
-*Websocket streams*  
+*Place order:*
+```csharp
+var restClient = new BinanceRestClient(opts => {
+	opts.ApiCredentials = new BinanceCredentials("APIKEY", "APISECRET");
+});
 
+// Place Limit order to go long for 0.1 ETH at 2000
+var orderResult = await restClient.UsdFuturesApi.Trading.PlaceOrderAsync(
+    "ETHUSDT",
+    OrderSide.Buy,
+    FuturesOrderType.Limit,
+    0.1m,
+    2000,
+    timeInForce: TimeInForce.GoodTillCanceled,
+    positionSide: PositionSide.Long);
+```
+
+*WebSocket subscription:*
 ```csharp
 // Subscribe to ETH/USDT ticker updates via the websocket API
 var socketClient = new BinanceSocketClient();
@@ -85,6 +100,7 @@ CryptoExchange.Net also allows for [easy access to different exchange API's](htt
 |Bitget|[JKorf/Bitget.Net](https://github.com/JKorf/Bitget.Net)|[![Nuget version](https://img.shields.io/nuget/v/JK.Bitget.net.svg?style=flat-square)](https://www.nuget.org/packages/JK.Bitget.Net)|
 |BitMart|[JKorf/BitMart.Net](https://github.com/JKorf/BitMart.Net)|[![Nuget version](https://img.shields.io/nuget/v/BitMart.net.svg?style=flat-square)](https://www.nuget.org/packages/BitMart.Net)|
 |BitMEX|[JKorf/BitMEX.Net](https://github.com/JKorf/BitMEX.Net)|[![Nuget version](https://img.shields.io/nuget/v/JKorf.BitMEX.net.svg?style=flat-square)](https://www.nuget.org/packages/JKorf.BitMEX.Net)|
+|Bitstamp|[JKorf/Bitstamp.Net](https://github.com/JKorf/Bitstamp.Net)|[![Nuget version](https://img.shields.io/nuget/v/Bitstamp.Net.svg?style=flat-square)](https://www.nuget.org/packages/Bitstamp.Net)|
 |BloFin|[JKorf/BloFin.Net](https://github.com/JKorf/BloFin.Net)|[![Nuget version](https://img.shields.io/nuget/v/BloFin.net.svg?style=flat-square)](https://www.nuget.org/packages/BloFin.Net)|
 |Bybit|[JKorf/Bybit.Net](https://github.com/JKorf/Bybit.Net)|[![Nuget version](https://img.shields.io/nuget/v/Bybit.net.svg?style=flat-square)](https://www.nuget.org/packages/Bybit.Net)|
 |Coinbase|[JKorf/Coinbase.Net](https://github.com/JKorf/Coinbase.Net)|[![Nuget version](https://img.shields.io/nuget/v/JKorf.Coinbase.Net.svg?style=flat-square)](https://www.nuget.org/packages/JKorf.Coinbase.Net)|
@@ -100,8 +116,10 @@ CryptoExchange.Net also allows for [easy access to different exchange API's](htt
 |Kucoin|[JKorf/Kucoin.Net](https://github.com/JKorf/Kucoin.Net)|[![Nuget version](https://img.shields.io/nuget/v/Kucoin.net.svg?style=flat-square)](https://www.nuget.org/packages/Kucoin.Net)|
 |Mexc|[JKorf/Mexc.Net](https://github.com/JKorf/Mexc.Net)|[![Nuget version](https://img.shields.io/nuget/v/JK.Mexc.net.svg?style=flat-square)](https://www.nuget.org/packages/JK.Mexc.Net)|
 |OKX|[JKorf/OKX.Net](https://github.com/JKorf/OKX.Net)|[![Nuget version](https://img.shields.io/nuget/v/JK.OKX.net.svg?style=flat-square)](https://www.nuget.org/packages/JK.OKX.Net)|
+|Polymarket|[JKorf/Polymarket.Net](https://github.com/JKorf/Polymarket.Net)|[![Nuget version](https://img.shields.io/nuget/v/Polymarket.net.svg?style=flat-square)](https://www.nuget.org/packages/Polymarket.Net)|
 |Toobit|[JKorf/Toobit.Net](https://github.com/JKorf/Toobit.Net)|[![Nuget version](https://img.shields.io/nuget/v/Toobit.net.svg?style=flat-square)](https://www.nuget.org/packages/Toobit.Net)|
 |Upbit|[JKorf/Upbit.Net](https://github.com/JKorf/Upbit.Net)|[![Nuget version](https://img.shields.io/nuget/v/JKorf.Upbit.net.svg?style=flat-square)](https://www.nuget.org/packages/JKorf.Upbit.Net)|
+|Weex|[JKorf/Weex.Net](https://github.com/JKorf/Weex.Net)|[![Nuget version](https://img.shields.io/nuget/v/Weex.net.svg?style=flat-square)](https://www.nuget.org/packages/Weex.Net)|
 |WhiteBit|[JKorf/WhiteBit.Net](https://github.com/JKorf/WhiteBit.Net)|[![Nuget version](https://img.shields.io/nuget/v/WhiteBit.net.svg?style=flat-square)](https://www.nuget.org/packages/WhiteBit.Net)|
 |XT|[JKorf/XT.Net](https://github.com/JKorf/XT.Net)|[![Nuget version](https://img.shields.io/nuget/v/XT.net.svg?style=flat-square)](https://www.nuget.org/packages/XT.Net)|
 
@@ -199,6 +217,159 @@ Make a one time donation in a crypto currency of your choice. If you prefer to d
 Alternatively, sponsor me on Github using [Github Sponsors](https://github.com/sponsors/JKorf). 
 
 ## Release notes
+* Version 12.12.0 - 01 May 2026
+    * Added REST and WebSocket SpotApi.Trading.AmendOrderAsync endpoint
+
+* Version 12.11.4 - 24 Apr 2026
+    * Added Transfer value to SelfTradePerventionMode enum
+    * Updated websocket Spot (margin) user data subscriptions to use subscriptionId to prevent events being propagated for both margin and normal subscriptions for a single message
+
+* Version 12.11.3 - 09 Apr 2026
+    * Updated CryptoExchange.Net to version 11.1.0, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Fixed TradeFi contracts not showing up in Shared GetFuturesSymbolsAsync response
+
+* Version 12.11.2 - 02 Apr 2026
+    * Updated CryptoExchange.Net to version 11.0.3, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Fixed TradeFi contracts not showing up in Shared GetFuturesSymbolsAsync response
+
+* Version 12.11.1 - 27 Mar 2026
+    * Removed socketClient.SpotApi.ExchangeData.SubscribeToAllTickerUpdatesAsync as it's no longer available in the API
+    * Updated Shared Spot SubscribeToAllTickersUpdatesAsync to alternative stream
+
+    * Notes for updating:
+        * If you previously relied on Spot SubscribeToAllTickerUpdatesAsync you can switch to either SubscribeToAllMiniTickerUpdatesAsync or SubscribeToAllRollingWindowTickerUpdatesAsync with timespan `TimeSpan.FromDays(1)`
+
+* Version 12.11.0 - 24 Mar 2026
+    * Updated CryptoExchange.Net to version 11.0.1, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Updated class for supplying API credentials from ApiCredentials to BinanceCredentials
+    * Updated Shared status parsing to default to Unknown value if not parsable
+    * Added support for specifying non-HMAC credentials via Configuration
+    * Added FeeBurn property to BinanceFuturesAccountInfo model
+    * Added UpdateTime property to BinanceFuturesFundingInfo model
+    * Added CirculatingSupply property to BinacneFuturesOpenInterestHistory model
+    * Added MaxMoveOrderLimit and PermissionSets properties to BinanceFuturesSymbol model
+    * Added IsolatedWallet, Notional and BreakEvenPrice properties to BinancePositionInfoBase model
+    * Added Isolated and AdlQuantile properties to BinancePositionDetailsUsdt model
+    * Added FromIsBase to BinanceConvertAssetPair model
+    * Added IsPublic to BinanceIsolatedMarginFeeData model
+    * Added TransferInEnabled, TransferOutEnabled, Created and WithdrawCollateralMarginLevel properties to BinanceMarginAccount model
+    * Added RiskBasedLiquidationRatio and UpdateTime to BinancePortfolioMarginCollateralRate model
+    * Added Direction property to BinanceDividendRecords model
+    * Added ToAsset to BinanceDustLog model
+    * Added OPOAllowed and AmendAllowed properties to BinanceSymbol model
+    * Added SpecialWithdrawTips, ResetAddressStatus and DepositDust properties to BinanceUserAsset model
+    * Added MarkPriceMovingAverage property to UsdFuturesApimark price subscriptions
+    * Fixed IsRpiTrade mapping on BinanceRecentTrade model
+    * Fixed restClient.SpotApi.Account.GetFiatPaymentHistoryAsync returning null in data instead of empty array
+
+    * Notes for updating:
+        * Update ApiCredentials to BinanceCredentials for authentication, i.e. `ApiCredentials = new ApiCredentials(..)` => `ApiCredentials = new BinanceCredentials(..)`
+        * When using AddBinance with the Configuration overload (loading config from appsettings), the API credentials path has been changed from ApiCredentials:Key to ApiCredentials:HMAC:Key (and secret)
+
+* Version 12.10.0 - 09 Mar 2026
+    * Added restClient.SpotApi.ExchangeData.GetExecutionRulesAsync endpoint
+    * Added restClient.SpotApi.ExchangeData.GetReferencePriceAsync endpoint
+    * Added restClient.SpotApi.ExchangeData.GetReferencePriceCalculationAsync endpoint
+    * Added socketClient.SpotApi.ExchangeData.GetExecutionRulesAsync request
+    * Added socketClient.SpotApi.ExchangeData.GetReferencePriceAsync request
+    * Added socketClient.SpotApi.ExchangeData.GetReferencePriceCalculationAsync request
+    * Added socketClient.SpotApi.ExchangeData.SubscribeToReferencePriceUpdatesAsync stream
+    * Added Identifier to binanceRestClient.SpotApi.Account.GetTravelRuleVaspListAsync response model
+    * Updated UsdFuturesApi WebSocket connection urls to include public/market/private in the URL as per API documentation update
+    * Updated xml comments to include json fields
+
+* Version 12.9.0 - 06 Mar 2026
+    * Updated CryptoExchange.Net to version 10.8.0, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Improved XML comments
+
+* Version 12.8.1 - 26 Feb 2026
+    * Fixed websocket cancel-replace query not outputting data when partially failing
+    * Fixed json serializing BinanceExchangeInfo model throwing stackoverflow exception
+
+* Version 12.8.0 - 25 Feb 2026
+    * Updated CryptoExchange.Net to version 10.7.1
+    * Added restClient.SpotApi.Account.GetMarginUserListenTokenAsync endpoint for starting/maintaining margin user data subscription
+    * Added socketClient.SpotApi.Account.SubscribeToMarginUserDataUpdatesAsync subscription for margin user data stream
+    * Added socketClient.SpotApi.Account.UpdateMarginUserDataTokenAsync for keeping alive the margin user data stream
+    * Removed deprecated margin stream endpoints
+
+* Version 12.7.0 - 24 Feb 2026
+    * Updated CryptoExchange.Net to version 10.7.0
+    * Added additional Http settings to client options
+    * Updated Shared REST interfaces pagination logic
+    * Updated HttpClient registration, fixing issue of DNS changes not getting processed
+    * Fixed UserClientProvider using unconfigured HttpClient
+
+* Version 12.6.0 - 16 Feb 2026
+    * Updated CryptoExchange.Net to version 10.6.0, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Fixed SymbolOrderBook websocket subscription not getting closed if when waiting for initial data times out
+
+* Version 12.5.2 - 12 Feb 2026
+    * Updated CryptoExchange.Net to version 10.5.4, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Added support for travel rule ExchangeParameters in Shared withdrawal/deposit endpoints
+
+* Version 12.5.1 - 11 Feb 2026
+    * Updated CryptoExchange.Net to version 10.5.3, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Fixed restClient.SpotApi.Account.GetTravelRuleWithdrawalHistoryAsync deserialization if questionnaire has value
+    * Added unknown TravelRuleApproveStatus Enum value
+
+* Version 12.5.0 - 10 Feb 2026
+    * Updated CryptoExchange.Net to version 10.5.1, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Fix futures websocket subscription account topic filtering
+    * Updated UserClientProvider internal client cache to non-static to prevent cleanup issues
+
+* Version 12.4.0 - 06 Feb 2026
+    * Updated CryptoExchange.Net to version 10.4.0, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Added BinanceUserSpotDataTracker, BinanceUserUsdFuturesDataTracker and BinanceUserCoinFuturesDataTracker
+    * Added Travel Rule withdrawal/deposit endpoints
+    * Added Status mapping for SharedDeposit models
+    * Added additional methods for requesting supported symbols to Shared ISpotSymbolRestClient/IFuturesSymbolRestClient interfaces
+    * Added PositionMode mapping on SharedPosition models
+    * Updated Spot websocket logic to support authentication via the websocket instead of via listen key
+    * Updated DepositStatus enum
+    * Updated websocket rate limit for futures to 9 requests per second to accomedate for ping frames from the websocket client
+    * Removed deprecated Spot listen key endpoints
+    * Removed onListenKeyExpired event from user data stream
+    * Fixed disposed clients getting returned from UserClientProvider
+    * Fixed activationPrice parameter mapping in socketClient.UsdFuturesApi.Trading.PlaceConditionalOrderAsync endpoint
+
+* Version 12.3.1 - 29 Jan 2026
+    * Added CompleteTime property to BinanceDeposit model
+    * Added Equity value for UnderlyingType enum
+
+* Version 12.3.0 - 22 Jan 2026
+    * Updated CryptoExchange.Net to version 10.3.0, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Removed legacy websocket message handling and the corresponding UseUpdatedDeserialization client option
+    * Added Metadata to BinanceExchange
+    * Removed restClient.SpotApi.ExchangeData.GetIsolatedMarginTierDataAsync endpoint (duplicate)
+
+* Version 12.2.2 - 19 Jan 2026
+    * Updated CryptoExchange.Net to version 10.2.5, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Fixed some order book sync issues
+
+* Version 12.2.1 - 14 Jan 2026
+    * Updated CryptoExchange.Net to version 10.2.3, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+
+* Version 12.2.0 - 13 Jan 2026
+    * Updated CryptoExchange.Net to version 10.2.0, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Added SequenceNumber to order book websocket updates
+    * Added QuantityWithoutRpi to BinanceStreamAggregatedTrade model
+    * Updated SymbolOrderBook implementations to correctly check sequence numbers
+    * Fixed CancelConditionalOrderAsync result type
+
+* Version 12.1.0 - 07 Jan 2026
+    * Updated CryptoExchange.Net version to 10.1.0, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes
+    * Added DataTimeLocal and DataAge properties to DataEvent object
+    * Added UpdateServerTime, UpdateLocalTime and DataAge properties to (I)SymbolOrderBook
+    * Added support for Ed25519 signing for websocket API
+    * Added restClient.SpotApi.Account.GetMarginCapitalFlowDataAsync endpoint
+    * Fixed error response parsing on rate limit response
+
+* Version 12.0.1 - 30 Dec 2025
+    * Updated CryptoExchange.Net version to 10.0.2, see https://github.com/JKorf/CryptoExchange.Net/releases/
+    * Added Symbol property to BinanceStreamMinimalTrade model
+    * Fixed activation price parameter serialization in restClient.UsdFuturesApi.Trading.PlaceConditionalOrderAsync endpoint
+
 * Version 12.0.0 - 16 Dec 2025
     * Added Net10.0 target framework
     * Updated CryptoExchange.Net version to 10.0.0, see https://github.com/JKorf/CryptoExchange.Net/releases/ for full release notes

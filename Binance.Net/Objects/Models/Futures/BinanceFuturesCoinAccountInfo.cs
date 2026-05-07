@@ -1,4 +1,4 @@
-﻿namespace Binance.Net.Objects.Models.Futures
+namespace Binance.Net.Objects.Models.Futures
 {
     /// <summary>
     /// Account info
@@ -7,46 +7,47 @@
     public record BinanceFuturesCoinAccountInfo
     {
         /// <summary>
-        /// Can deposit
+        /// ["<c>canDeposit</c>"] Whether deposits are allowed.
         /// </summary>
         [JsonPropertyName("canDeposit")]
         public bool CanDeposit { get; set; }
         /// <summary>
-        /// Can trade
+        /// ["<c>canTrade</c>"] Whether trading is allowed.
         /// </summary>
         [JsonPropertyName("canTrade")]
         public bool CanTrade { get; set; }
         /// <summary>
-        /// Can withdraw
+        /// ["<c>canWithdraw</c>"] Whether withdrawals are allowed.
         /// </summary>
         [JsonPropertyName("canWithdraw")]
         public bool CanWithdraw { get; set; }
         /// <summary>
-        /// Fee tier
+        /// ["<c>feeTier</c>"] Fee tier
         /// </summary>
         [JsonPropertyName("feeTier")]
         public int FeeTier { get; set; }
         /// <summary>
-        /// Update tier
+        /// ["<c>updateTier</c>"] Update tier
         /// </summary>
         [JsonPropertyName("updateTier")]
         public int UpdateTier { get; set; }
 
         /// <summary>
-        /// Account assets
+        /// ["<c>assets</c>"] Account assets
         /// </summary>
         [JsonPropertyName("assets")]
         public BinanceFuturesAccountAsset[] Assets { get; set; } = Array.Empty<BinanceFuturesAccountAsset>();
         /// <summary>
-        /// Account positions
+        /// ["<c>positions</c>"] Account positions
         /// </summary>
         [JsonPropertyName("positions")]
         public BinancePositionInfoCoin[] Positions { get; set; } = Array.Empty<BinancePositionInfoCoin>();
         /// <summary>
-        /// Update time
+        /// ["<c>updateTime</c>"] The account update time.
         /// </summary>
         [JsonConverter(typeof(DateTimeConverter))]
         [JsonPropertyName("updateTime")]
         public DateTime UpdateTime { get; set; }
     }
 }
+

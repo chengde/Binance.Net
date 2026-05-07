@@ -1,4 +1,4 @@
-﻿using Binance.Net.Converters;
+using Binance.Net.Converters;
 using Binance.Net.Enums;
 
 namespace Binance.Net.Objects.Models.Spot
@@ -10,7 +10,7 @@ namespace Binance.Net.Objects.Models.Spot
     public record BinanceSymbolFilter
     {
         /// <summary>
-        /// The type of this filter
+        /// ["<c>filterType</c>"] The type of this filter
         /// </summary>
         [JsonPropertyName("filterType")]
         public SymbolFilterType FilterType { get; set; }
@@ -250,7 +250,7 @@ namespace Binance.Net.Objects.Models.Spot
         /// </summary>
         public int MinTrailingBelowDelta { get; set; }
         /// <summary>
-        /// The MaxTrailingBelowDelta filter defines the minimum amount in Basis Point or BIPS below the price to activate the order.
+        /// The MaxTrailingBelowDelta filter defines the maximum amount in Basis Point or BIPS below the price to activate the order.
         /// </summary>
         public int MaxTrailingBelowDelta { get; set; }
     }
@@ -291,3 +291,4 @@ namespace Binance.Net.Objects.Models.Spot
         public int MaxNumOrderLists { get; set; }
     }
 }
+

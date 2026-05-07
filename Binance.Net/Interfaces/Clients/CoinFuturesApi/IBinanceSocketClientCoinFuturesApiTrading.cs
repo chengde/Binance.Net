@@ -10,8 +10,13 @@ namespace Binance.Net.Interfaces.Clients.CoinFuturesApi
     public interface IBinanceSocketClientCoinFuturesApiTrading
     {
         /// <summary>
-        /// Place a new order
-        /// <para><a href="https://developers.binance.com/docs/derivatives/coin-margined-futures/trade/websocket-api" /></para>
+        /// Places a new order
+        /// <para>
+        /// Docs:<br />
+        /// <a href="https://developers.binance.com/docs/derivatives/coin-margined-futures/trade/websocket-api" /><br />
+        /// Endpoint:<br />
+        /// order.place
+        /// </para>
         /// </summary>
         /// <param name="symbol">The symbol the order is for, for example `ETHUSD_PERP`</param>
         /// <param name="side">The order side (buy/sell)</param>
@@ -33,6 +38,7 @@ namespace Binance.Net.Interfaces.Clients.CoinFuturesApi
         /// <param name="selfTradePreventionMode">Self trade prevention mode</param>
         /// <param name="receiveWindow">The receive window for which this request is active. When the request takes longer than this to complete the server will reject the request</param>
         /// <param name="ct">Cancellation token</param>
+        /// <returns>Placed order response</returns>
         Task<CallResult<BinanceResponse<BinanceFuturesOrder>>> PlaceOrderAsync(string symbol,
             Enums.OrderSide side,
             FuturesOrderType type,
@@ -55,8 +61,13 @@ namespace Binance.Net.Interfaces.Clients.CoinFuturesApi
             CancellationToken ct = default);
 
         /// <summary>
-        /// Edit an existing order
-        /// <para><a href="https://developers.binance.com/docs/derivatives/coin-margined-futures/trade/websocket-api/Modify-Order" /></para>
+        /// Edits an existing order
+        /// <para>
+        /// Docs:<br />
+        /// <a href="https://developers.binance.com/docs/derivatives/coin-margined-futures/trade/websocket-api/Modify-Order" /><br />
+        /// Endpoint:<br />
+        /// order.modify
+        /// </para>
         /// </summary>
         /// <param name="symbol">The symbol, for example `ETHUSD_PERP`</param>
         /// <param name="side">Order side</param>
@@ -67,24 +78,34 @@ namespace Binance.Net.Interfaces.Clients.CoinFuturesApi
         /// <param name="origClientOrderId">Client order id of the order to edit</param>
         /// <param name="receiveWindow">The receive window for which this request is active. When the request takes longer than this to complete the server will reject the request</param>
         /// <param name="ct">Cancellation token</param>
-        /// <returns></returns>
+        /// <returns>Edited order response</returns>
         Task<CallResult<BinanceResponse<BinanceFuturesOrder>>> EditOrderAsync(string symbol, OrderSide side, decimal quantity, decimal? price = null, PriceMatch? priceMatch = null, long? orderId = null, string? origClientOrderId = null, long? receiveWindow = null, CancellationToken ct = default);
 
         /// <summary>
         /// Cancels a pending order
-        /// <para><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/websocket-api/Cancel-Order" /></para>
+        /// <para>
+        /// Docs:<br />
+        /// <a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/websocket-api/Cancel-Order" /><br />
+        /// Endpoint:<br />
+        /// order.cancel
+        /// </para>
         /// </summary>
         /// <param name="symbol">The symbol the order is for, for example `ETHUSD_PERP`</param>
         /// <param name="orderId">The order id of the order</param>
         /// <param name="origClientOrderId">The client order id of the order</param>
         /// <param name="receiveWindow">The receive window for which this request is active. When the request takes longer than this to complete the server will reject the request</param>
         /// <param name="ct">Cancellation token</param>
-        /// <returns>Id's for canceled order</returns>
+        /// <returns>Canceled order response</returns>
         Task<CallResult<BinanceResponse<BinanceFuturesOrder>>> CancelOrderAsync(string symbol, long? orderId = null, string? origClientOrderId = null, long? receiveWindow = null, CancellationToken ct = default);
 
         /// <summary>
         /// Retrieves data for a specific order. Either orderId or origClientOrderId should be provided.
-        /// <para><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/websocket-api/Query-Order" /></para>
+        /// <para>
+        /// Docs:<br />
+        /// <a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/websocket-api/Query-Order" /><br />
+        /// Endpoint:<br />
+        /// order.status
+        /// </para>
         /// </summary>
         /// <param name="symbol">The symbol the order is for, for example `ETHUSD_PERP`</param>
         /// <param name="orderId">The order id of the order</param>
@@ -95,12 +116,18 @@ namespace Binance.Net.Interfaces.Clients.CoinFuturesApi
         Task<CallResult<BinanceResponse<BinanceFuturesOrder>>> GetOrderAsync(string symbol, long? orderId = null, string? origClientOrderId = null, long? receiveWindow = null, CancellationToken ct = default);
 
         /// <summary>
-        /// Get position information
-        /// <para><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/websocket-api/Position-Info-V2" /></para>
+        /// Gets position information
+        /// <para>
+        /// Docs:<br />
+        /// <a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/websocket-api/Position-Info-V2" /><br />
+        /// Endpoint:<br />
+        /// account.position
+        /// </para>
         /// </summary>
         /// <param name="symbol">Filter by symbol, for example `ETHUSD_PERP`</param>
         /// <param name="receiveWindow">The receive window for which this request is active. When the request takes longer than this to complete the server will reject the request</param>
         /// <param name="ct">Cancellation token</param>
+        /// <returns>Position information response</returns>
         Task<CallResult<BinanceResponse<BinancePositionDetailsCoin[]>>> GetPositionsAsync(string? symbol = null, long? receiveWindow = null, CancellationToken ct = default);
 
     }

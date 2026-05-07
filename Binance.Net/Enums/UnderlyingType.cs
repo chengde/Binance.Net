@@ -1,4 +1,4 @@
-﻿using CryptoExchange.Net.Attributes;
+using CryptoExchange.Net.Attributes;
 
 namespace Binance.Net.Enums
 {
@@ -9,24 +9,30 @@ namespace Binance.Net.Enums
     public enum UnderlyingType
     {
         /// <summary>
-        /// Coin
+        /// ["<c>COIN</c>"] Coin
         /// </summary>
         [Map("COIN")]
         Coin,
         /// <summary>
-        /// Index
+        /// ["<c>INDEX</c>"] Index
         /// </summary>
         [Map("INDEX")]
         Index,
         /// <summary>
-        /// Pre-market
+        /// ["<c>PREMARKET</c>"] Pre-market
         /// </summary>
         [Map("PREMARKET")]
         PreMarket,
         /// <summary>
-        /// Commodity
+        /// ["<c>COMMODITY</c>"] Commodity
         /// </summary>
         [Map("COMMODITY")]
-        Commodity
+        Commodity,
+        /// <summary>
+        /// ["<c>EQUITY</c>"] Equity
+        /// </summary>
+        [Map("EQUITY")]
+        Equity
     }
 }
+

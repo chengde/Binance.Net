@@ -14,6 +14,19 @@ namespace Binance.Net
     public static class BinanceExchange
     {
         /// <summary>
+        /// Platform metadata
+        /// </summary>
+        public static PlatformInfo Metadata { get; } = new PlatformInfo(
+                "Binance",
+                "Binance",
+                "https://raw.githubusercontent.com/JKorf/Binance.Net/master/Binance.Net/Icon/icon.png",
+                "https://www.binance.com",
+                ["https://binance-docs.github.io/apidocs/spot/en/#change-log"],
+                PlatformType.CryptoCurrencyExchange,
+                CentralizationType.Centralized
+                );
+
+        /// <summary>
         /// Exchange name
         /// </summary>
         public static string ExchangeName => "Binance";
@@ -124,8 +137,8 @@ namespace Binance.Net
                                             .AddGuard(new RateLimitGuard(RateLimitGuard.PerHost, new IGuardFilter[] { new HostFilter("https://fapi.binance.com") }, 2400, TimeSpan.FromMinutes(1), RateLimitWindowType.Fixed)) // IP limit of 2400 request weight per minute to fapi.binance.com host
                                             .AddGuard(new RateLimitGuard(RateLimitGuard.PerHost, new IGuardFilter[] { new HostFilter("https://dapi.binance.com") }, 2400, TimeSpan.FromMinutes(1), RateLimitWindowType.Fixed)); // IP limit of 2400 request weight per minute to dapi.binance.com host
             FuturesSocket = new RateLimitGate("Futures Socket")
-                                            .AddGuard(new RateLimitGuard(RateLimitGuard.PerConnection, new IGuardFilter[] { new LimitItemTypeFilter(RateLimitItemType.Request), new HostFilter("wss://dstream.binance.com") }, 10, TimeSpan.FromSeconds(1), RateLimitWindowType.Fixed)) // 10 requests per second per path (connection)
-                                            .AddGuard(new RateLimitGuard(RateLimitGuard.PerConnection, new IGuardFilter[] { new LimitItemTypeFilter(RateLimitItemType.Request), new HostFilter("wss://fstream.binance.com") }, 10, TimeSpan.FromSeconds(1), RateLimitWindowType.Fixed)) // 10 requests per second per path (connection)
+                                            .AddGuard(new RateLimitGuard(RateLimitGuard.PerConnection, new IGuardFilter[] { new LimitItemTypeFilter(RateLimitItemType.Request), new HostFilter("wss://dstream.binance.com") }, 9, TimeSpan.FromSeconds(1), RateLimitWindowType.Fixed)) // 10 requests per second per path (connection)
+                                            .AddGuard(new RateLimitGuard(RateLimitGuard.PerConnection, new IGuardFilter[] { new LimitItemTypeFilter(RateLimitItemType.Request), new HostFilter("wss://fstream.binance.com") }, 9, TimeSpan.FromSeconds(1), RateLimitWindowType.Fixed)) // 10 requests per second per path (connection)
                                             .AddGuard(new RateLimitGuard(RateLimitGuard.PerHost, new IGuardFilter[] { new HostFilter("wss://ws-fapi.binance.com") }, 2400, TimeSpan.FromMinutes(1), RateLimitWindowType.Fixed, connectionWeight: 5));
 
             EndpointLimit.RateLimitTriggered += (x) => RateLimitTriggered?.Invoke(x);

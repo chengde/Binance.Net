@@ -1,4 +1,6 @@
-﻿namespace Binance.Net.Objects.Models.Spot
+using Binance.Net.Enums;
+
+namespace Binance.Net.Objects.Models.Spot
 {
     /// <summary>
     /// Dividend record
@@ -7,34 +9,40 @@
     public record BinanceDividendRecord
     {
         /// <summary>
-        /// Id
+        /// ["<c>id</c>"] The dividend record identifier.
         /// </summary>
         [JsonPropertyName("id")]
         public long Id { get; set; }
         /// <summary>
-        /// Quantity
+        /// ["<c>amount</c>"] Quantity
         /// </summary>
         [JsonPropertyName("amount")]
         public decimal Quantity { get; set; }
         /// <summary>
-        /// Asset
+        /// ["<c>asset</c>"] The asset.
         /// </summary>
         [JsonPropertyName("asset")]
         public string Asset { get; set; } = string.Empty;
         /// <summary>
-        /// Timestamp of the transaction
+        /// ["<c>divTime</c>"] Timestamp of the transaction
         /// </summary>
         [JsonConverter(typeof(DateTimeConverter)), JsonPropertyName("divTime")]
         public DateTime Timestamp { get; set; }
         /// <summary>
-        /// Transaction id
+        /// ["<c>tranId</c>"] Transaction id
         /// </summary>
         [JsonPropertyName("tranId")]
         public long TransactionId { get; set; }
         /// <summary>
-        /// Info
+        /// ["<c>enInfo</c>"] Additional info.
         /// </summary>
         [JsonPropertyName("enInfo")]
         public string? Info { get; set; }
+        /// <summary>
+        /// ["<c>direction</c>"] Direction
+        /// </summary>
+        [JsonPropertyName("direction")]
+        public DividendDirection Direction { get; set; }
     }
 }
+

@@ -22,7 +22,7 @@ namespace Binance.Net.Clients.SpotApi
             if (validationError != null)
                 return new ExchangeResult<UpdateSubscription>(Exchange, validationError);
 
-            var result = await ExchangeData.SubscribeToAllTickerUpdatesAsync(update => handler(update.ToType(update.Data.Select(x => new SharedSpotTicker(ExchangeSymbolCache.ParseSymbol(_topicId, x.Symbol), x.Symbol, x.LastPrice, x.HighPrice, x.LowPrice, x.Volume, x.PriceChangePercent)
+            var result = await ExchangeData.SubscribeToAllRollingWindowTickerUpdatesAsync(TimeSpan.FromDays(1), update => handler(update.ToType(update.Data.Select(x => new SharedSpotTicker(ExchangeSymbolCache.ParseSymbol(_topicId, x.Symbol), x.Symbol, x.LastPrice, x.HighPrice, x.LowPrice, x.Volume, x.PriceChangePercent)
             {
                 QuoteVolume = x.QuoteVolume
             }).ToArray())), ct).ConfigureAwait(false);
@@ -120,20 +120,14 @@ namespace Binance.Net.Clients.SpotApi
         #endregion
 
         #region Balance client
-        EndpointOptions<SubscribeBalancesRequest> IBalanceSocketClient.SubscribeBalanceOptions { get; } = new EndpointOptions<SubscribeBalancesRequest>(false)
-        {
-            RequiredOptionalParameters = new List<ParameterDescription>
-            {
-                new ParameterDescription(nameof(SubscribeBalancesRequest.ListenKey), typeof(string), "The listenkey for starting the user stream", "123123123")
-            }
-        };
+        EndpointOptions<SubscribeBalancesRequest> IBalanceSocketClient.SubscribeBalanceOptions { get; } = new EndpointOptions<SubscribeBalancesRequest>(true);
         async Task<ExchangeResult<UpdateSubscription>> IBalanceSocketClient.SubscribeToBalanceUpdatesAsync(SubscribeBalancesRequest request, Action<DataEvent<SharedBalance[]>> handler, CancellationToken ct)
         {
             var validationError = ((IBalanceSocketClient)this).SubscribeBalanceOptions.ValidateRequest(Exchange, request, request.TradingMode, SupportedTradingModes);
             if (validationError != null)
                 return new ExchangeResult<UpdateSubscription>(Exchange, validationError);
 
-            var result = await Account.SubscribeToUserDataUpdatesAsync(request.ListenKey!,
+            var result = await Account.SubscribeToUserDataUpdatesAsync(
                 onAccountPositionMessage: update => handler(update.ToType(update.Data.Balances.Select(x => new SharedBalance(x.Asset, x.Available, x.Total)).ToArray())),
                 ct: ct).ConfigureAwait(false);
 
@@ -144,20 +138,14 @@ namespace Binance.Net.Clients.SpotApi
 
         #region Spot Order client
 
-        EndpointOptions<SubscribeSpotOrderRequest> ISpotOrderSocketClient.SubscribeSpotOrderOptions { get; } = new EndpointOptions<SubscribeSpotOrderRequest>(false)
-        {
-            RequiredOptionalParameters = new List<ParameterDescription>
-            {
-                new ParameterDescription(nameof(SubscribeSpotOrderRequest.ListenKey), typeof(string), "Listenkey for the user stream", "123123123")
-            }
-        };
+        EndpointOptions<SubscribeSpotOrderRequest> ISpotOrderSocketClient.SubscribeSpotOrderOptions { get; } = new EndpointOptions<SubscribeSpotOrderRequest>(true);
         async Task<ExchangeResult<UpdateSubscription>> ISpotOrderSocketClient.SubscribeToSpotOrderUpdatesAsync(SubscribeSpotOrderRequest request, Action<DataEvent<SharedSpotOrder[]>> handler, CancellationToken ct)
         {
             var validationError = ((ISpotOrderSocketClient)this).SubscribeSpotOrderOptions.ValidateRequest(Exchange, request, TradingMode.Spot, SupportedTradingModes);
             if (validationError != null)
                 return new ExchangeResult<UpdateSubscription>(Exchange, validationError);
 
-            var result = await Account.SubscribeToUserDataUpdatesAsync(request.ListenKey!,
+            var result = await Account.SubscribeToUserDataUpdatesAsync(
                 onOrderUpdateMessage: update => handler(update.ToType(new[] {
                     new SharedSpotOrder(
                         ExchangeSymbolCache.ParseSymbol(_topicId, update.Data.Symbol),
@@ -192,16 +180,19 @@ namespace Binance.Net.Clients.SpotApi
 
         private SharedOrderStatus ParseOrderStatus(OrderStatus status)
         {
+            if (status == Enums.OrderStatus.Canceled || status == OrderStatus.Rejected || status == OrderStatus.Expired)
+                return SharedOrderStatus.Canceled;
+            if (status == Enums.OrderStatus.PendingNew
+                || status == Enums.OrderStatus.PendingCancel
+                || status == Enums.OrderStatus.New
+                || status == Enums.OrderStatus.PartiallyFilled)
+            {
+                return SharedOrderStatus.Open;
+            }
             if (status == OrderStatus.Filled)
                 return SharedOrderStatus.Filled;
 
-            if (status == OrderStatus.PartiallyFilled
-                || status == OrderStatus.New
-                || status == OrderStatus.PendingNew 
-                || status == OrderStatus.PendingCancel)
-                return SharedOrderStatus.Open;
-
-            return SharedOrderStatus.Canceled;
+            return SharedOrderStatus.Unknown;
         }
 
         private SharedOrderType ParseOrderType(SpotOrderType type)

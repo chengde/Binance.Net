@@ -22,7 +22,7 @@ using System.Net.WebSockets;
 namespace Binance.Net.Clients.SpotApi
 {
     /// <inheritdoc />
-    internal partial class BinanceSocketClientSpotApi : SocketApiClient, IBinanceSocketClientSpotApi
+    internal partial class BinanceSocketClientSpotApi : SocketApiClient<BinanceEnvironment, BinanceAuthenticationProvider, BinanceCredentials>, IBinanceSocketClientSpotApi
     {
         #region fields
         /// <inheritdoc />
@@ -33,25 +33,8 @@ namespace Binance.Net.Clients.SpotApi
         internal BinanceExchangeInfo? _exchangeInfo;
         internal DateTime? _lastExchangeInfoUpdate;
 
-        private static readonly MessagePath _idPath = MessagePath.Get().Property("id");
-        private static readonly MessagePath _streamPath = MessagePath.Get().Property("stream");
-        private static readonly MessagePath _ePath = MessagePath.Get().Property("data").Property("e");
-
-
         protected override ErrorMapping ErrorMapping => BinanceErrors.SpotErrors;
 
-        private readonly HashSet<string> _userEvents = new HashSet<string>
-        {
-            "outboundAccountPosition",
-            "balanceUpdate",
-            "executionReport",
-            "listStatus",
-            "listenKeyExpired",
-            "eventStreamTerminated",
-            "externalLockUpdate",
-            "MARGIN_LEVEL_STATUS_CHANGE",
-            "USER_LIABILITY_CHANGE"
-        };
         #endregion
 
         /// <inheritdoc />
@@ -88,27 +71,11 @@ namespace Binance.Net.Clients.SpotApi
                 => BinanceExchange.FormatSymbol(baseAsset, quoteAsset, tradingMode, deliverTime);
 
         /// <inheritdoc />
-        protected override AuthenticationProvider CreateAuthenticationProvider(ApiCredentials credentials)
+        protected override BinanceAuthenticationProvider CreateAuthenticationProvider(BinanceCredentials credentials)
             => new BinanceAuthenticationProvider(credentials);
 
-        protected override IByteMessageAccessor CreateAccessor(WebSocketMessageType type) => new SystemTextJsonByteMessageAccessor(SerializerOptions.WithConverters(BinanceExchange._serializerContext));
         protected override IMessageSerializer CreateSerializer() => new SystemTextJsonMessageSerializer(SerializerOptions.WithConverters(BinanceExchange._serializerContext));
-                
-        /// <inheritdoc />
-        public override string? GetListenerIdentifier(IMessageAccessor message)
-        {
-            var id = message.GetValue<int?>(_idPath);
-            if (id != null)
-                return id.ToString();
-
-            var stream = message.GetValue<string>(_streamPath); ;
-            var e = message.GetValue<string>(_ePath);
-            if (e != null && _userEvents.Contains(e))
-                return stream + e;
-
-            return stream;
-        }
-
+        
         internal Task<CallResult<UpdateSubscription>> SubscribeAsync<T>(string url, string dataType, IEnumerable<string> topics, Action<DateTime, string?, T> onData, CancellationToken ct)
         {
             var subscription = new BinanceSubscription<T>(_logger, dataType, topics.ToList(), onData, false);
@@ -144,6 +111,11 @@ namespace Binance.Net.Clients.SpotApi
             return base.SubscribeAsync(url.AppendPath("stream"), subscription, ct);
         }
 
+        internal Task<CallResult<UpdateSubscription>> SubscribeInternal2Async(string url, Subscription subscription, CancellationToken ct)
+        {
+            return base.SubscribeAsync(url, subscription, ct);
+        }
+
         internal async Task<CallResult<BinanceResponse<T>>> QueryAsync<T>(string url, string method, Dictionary<string, object> parameters, bool authenticated = false, bool sign = false, int weight = 1, CancellationToken ct = default)
         {
             if (authenticated)
@@ -151,15 +123,10 @@ namespace Binance.Net.Clients.SpotApi
                 if (AuthenticationProvider == null)
                     throw new InvalidOperationException("No credentials provided for authenticated endpoint");
 
-                var authProvider = (BinanceAuthenticationProvider)AuthenticationProvider;
                 if (sign)
-                {
-                    parameters = authProvider.AuthenticateSocketParameters(parameters);
-                }
+                    parameters = AuthenticationProvider.ProcessRequest(this, parameters);
                 else
-                {
-                    parameters.Add("apiKey", authProvider.ApiKey);
-                }
+                    parameters.Add("apiKey", AuthenticationProvider.Key);
             }
 
             var request = new BinanceSocketQuery
@@ -197,15 +164,10 @@ namespace Binance.Net.Clients.SpotApi
                 if (AuthenticationProvider == null)
                     throw new InvalidOperationException("No credentials provided for authenticated endpoint");
 
-                var authProvider = (BinanceAuthenticationProvider)AuthenticationProvider;
                 if (sign)
-                {
-                    parameters = authProvider.AuthenticateSocketParameters(parameters);
-                }
+                    parameters = AuthenticationProvider.ProcessRequest(this, parameters);
                 else
-                {
-                    parameters.Add("apiKey", authProvider.ApiKey);
-                }
+                    parameters.Add("apiKey", AuthenticationProvider.Key);
             }
 
             var request = new BinanceSocketQuery
@@ -229,9 +191,6 @@ namespace Binance.Net.Clients.SpotApi
             return result;
         }
 
-        /// <inheritdoc />
-        protected override Task<Query?> GetAuthenticationRequestAsync(SocketConnection connection) => Task.FromResult<Query?>(null);
-
         internal async Task<BinanceTradeRuleResult> CheckTradeRules(string symbol, decimal? quantity, decimal? quoteQuantity, decimal? price, decimal? stopPrice, SpotOrderType? type)
         {
             if (ApiOptions.TradeRulesBehaviour == TradeRulesBehaviour.None)
@@ -247,5 +206,10 @@ namespace Binance.Net.Clients.SpotApi
         }
 
         public override ISocketMessageHandler CreateMessageConverter(WebSocketMessageType messageType) => new BinanceSocketSpotMessageHandler();
+
+        internal BinanceMarginUserDataSubscription[] GetMarginUserDataSubscriptions()
+        {
+            return _socketConnections.Values.SelectMany(x => x.Subscriptions.OfType<BinanceMarginUserDataSubscription>()).ToArray();
+        }
     }
 }

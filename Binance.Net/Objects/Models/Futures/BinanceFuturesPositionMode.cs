@@ -1,4 +1,4 @@
-﻿namespace Binance.Net.Objects.Models.Futures
+namespace Binance.Net.Objects.Models.Futures
 {
     /// <summary>
     /// User's position mode
@@ -7,9 +7,10 @@
     public record BinanceFuturesPositionMode
     {
         /// <summary>
-        /// true": Hedge Mode mode; "false": One-way Mode
+        /// ["<c>dualSidePosition</c>"] Whether hedge mode is enabled (`true`) or one-way mode is used (`false`).
         /// </summary>
         [JsonPropertyName("dualSidePosition")]
         public bool IsHedgeMode { get; set; }
     }
 }
+

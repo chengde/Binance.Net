@@ -85,6 +85,7 @@ namespace Binance.Net.Clients.UsdFuturesApi
 
             var subscription = new BinanceUsdFuturesUserDataSubscription(
                 _logger,
+                _client,
                 listenKey,
                 onOrderUpdate,
                 onTradeUpdate,
@@ -96,7 +97,7 @@ namespace Binance.Net.Clients.UsdFuturesApi
                 onGridUpdate,
                 onConditionalOrderTriggerRejectUpdate,
                 onAlgoOrderUpdate);
-            return await _client.SubscribeInternalAsync(_client.BaseAddress, subscription, ct).ConfigureAwait(false);
+            return await _client.SubscribeInternalAsync(_client.BaseAddress.AppendPath("private"), subscription, ct).ConfigureAwait(false);
         }
 
         #endregion

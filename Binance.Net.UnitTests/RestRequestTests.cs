@@ -26,7 +26,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -58,9 +58,6 @@ namespace Binance.Net.UnitTests
             await tester.ValidateAsync(client => client.SpotApi.Account.SetBnbBurnStatusAsync(true), "SetBnbBurnStatus");
             await tester.ValidateAsync(client => client.SpotApi.Account.TransferAsync(Enums.UniversalTransferType.CoinFuturesToFunding, "ETH", 1), "Transfer");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetTransfersAsync(Enums.UniversalTransferType.CoinFuturesToFunding), "GetTransfers");
-            await tester.ValidateAsync(client => client.SpotApi.Account.StartUserStreamAsync(), "StartUserStream", "listenKey");
-            await tester.ValidateAsync(client => client.SpotApi.Account.KeepAliveUserStreamAsync("123"), "KeepAliveUserStream");
-            await tester.ValidateAsync(client => client.SpotApi.Account.StopUserStreamAsync("123"), "StopUserStream");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetMarginLevelInformationAsync(), "GetMarginLevelInformation");
             await tester.ValidateAsync(client => client.SpotApi.Account.MarginBorrowAsync("ETH", 1), "MarginBorrow");
             await tester.ValidateAsync(client => client.SpotApi.Account.MarginRepayAsync("ETH", 1), "MarginRepay");
@@ -72,7 +69,6 @@ namespace Binance.Net.UnitTests
             await tester.ValidateAsync(client => client.SpotApi.Account.GetMarginInterestHistoryAsync("ETH"), "GetMarginInterestHistory");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetMarginInterestRateHistoryAsync("ETH"), "GetMarginInterestRateHistory");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetMarginForcedLiquidationHistoryAsync(), "GetMarginForcedLiquidationHistory");
-            await tester.ValidateAsync(client => client.SpotApi.Account.GetIsolatedMarginTierDataAsync("ETHUSDT"), "GetIsolatedMarginTierData");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetMarginAccountInfoAsync(), "GetMarginAccountInfo");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetMarginMaxBorrowAmountAsync("ETH"), "GetMarginMaxBorrowAmount");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetMarginMaxTransferAmountAsync("ETH"), "GetMarginMaxTransferAmount", "amount");
@@ -81,12 +77,6 @@ namespace Binance.Net.UnitTests
             await tester.ValidateAsync(client => client.SpotApi.Account.EnableIsolatedMarginAccountAsync("ETHUSDT"), "EnableIsolatedMarginAccount");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetEnabledIsolatedMarginAccountLimitAsync(), "GetEnabledIsolatedMarginAccountLimit");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetMarginOrderRateLimitStatusAsync(), "GetMarginOrderRateLimitStatus");
-            await tester.ValidateAsync(client => client.SpotApi.Account.StartMarginUserStreamAsync(), "StartMarginUserStream", "listenKey");
-            await tester.ValidateAsync(client => client.SpotApi.Account.KeepAliveMarginUserStreamAsync("123"), "KeepAliveMarginUserStream");
-            await tester.ValidateAsync(client => client.SpotApi.Account.StopMarginUserStreamAsync("123"), "StopMarginUserStream");
-            await tester.ValidateAsync(client => client.SpotApi.Account.StartIsolatedMarginUserStreamAsync("ETHUSDT"), "StartIsolatedMarginUserStream", "listenKey");
-            await tester.ValidateAsync(client => client.SpotApi.Account.KeepAliveIsolatedMarginUserStreamAsync("ETHUSDT", "123"), "KeepAliveIsolatedMarginUserStream");
-            await tester.ValidateAsync(client => client.SpotApi.Account.CloseIsolatedMarginUserStreamAsync("ETHUSDT", "123"), "StopIsolatedMarginUserStream");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetTradingStatusAsync(), "GetTradingStatus", "data");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetOrderRateLimitStatusAsync(), "GetOrderRateLimitStatus");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetRebateHistoryAsync(), "GetRebateHistory", "data");
@@ -96,12 +86,14 @@ namespace Binance.Net.UnitTests
             await tester.ValidateAsync(client => client.SpotApi.Account.GetBusdConvertHistoryAsync(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow), "GetBusdConvertHistory");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetCloudMiningHistoryAsync(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow), "GetCloudMiningHistory");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetIsolatedMarginFeeDataAsync(), "GetIsolatedMarginFeeData");
+            await tester.ValidateAsync(client => client.SpotApi.Account.GetMarginCapitalFlowDataAsync(), "GetMarginCapitalFlowData");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetCrossMarginSmallLiabilityExchangeAssetsAsync(), "GetCrossMarginSmallLiabilityExchangeAssets");
             await tester.ValidateAsync(client => client.SpotApi.Account.CrossMarginSmallLiabilityExchangeAsync(new[] { "ETH" }), "CrossMarginSmallLiabilityExchange");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetCrossMarginSmallLiabilityExchangeHistoryAsync(), "GetCrossMarginSmallLiabilityExchangeHistory");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetTradeFeeAsync(), "GetTradeFee");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetAccountVipLevelAndStatusAsync(), "GetAccountVipLevelAndStatus");
             await tester.ValidateAsync(client => client.SpotApi.Account.GetCommissionRatesAsync("ETHUSDT"), "GetCommissionRates");
+            await tester.ValidateAsync(client => client.SpotApi.Account.GetTravelRuleWithdrawalHistoryAsync(), "GetTravelRuleWithdrawalHistory");
         }
 
         [Test]
@@ -112,7 +104,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -139,10 +131,14 @@ namespace Binance.Net.UnitTests
             await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetIsolatedMarginSymbolsAsync("ETHUSDT"), "GetIsolatedMarginSymbols");
             await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetCrossMarginCollateralRatioAsync(), "GetCrossMarginCollateralRatio");
             await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetFutureHourlyInterestRateAsync(new[] { "ETHUSDT" }, false), "GetFutureHourlyInterestRate");
+            await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetIsolatedMarginTierDataAsync("ETHUSDT"), "GetIsolatedMarginTierData");
             await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetMarginDelistScheduleAsync(), "GetMarginDelistSchedule");
             await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetConvertListAllPairsAsync(), "GetConvertListAllPairs");
             await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetConvertQuantityPrecisionPerAssetAsync(), "GetConvertQuantityPrecisionPerAsset");
             await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetDelistScheduleAsync(), "GetDelistSchedule");
+            await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetExecutionRulesAsync(), "GetExecutionRules", nestedJsonProperty: "symbolRules");
+            await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetReferencePriceAsync("123"), "GetReferencePrice");
+            await tester.ValidateAsync(client => client.SpotApi.ExchangeData.GetReferencePriceCalculationAsync("123", SymbolStatus.Halt), "GetReferencePriceCalculation");
         }
 
         [Test]
@@ -153,7 +149,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -164,6 +160,7 @@ namespace Binance.Net.UnitTests
             await tester.ValidateAsync(client => client.SpotApi.Trading.CancelOrderAsync("ETHUSDT", 123), "CancelOrder");
             await tester.ValidateAsync(client => client.SpotApi.Trading.CancelAllOrdersAsync("ETHUSDT"), "CancelAllOrders");
             await tester.ValidateAsync(client => client.SpotApi.Trading.ReplaceOrderAsync("ETHUSDT", Enums.OrderSide.Sell, Enums.SpotOrderType.Limit, Enums.CancelReplaceMode.AllowFailure, 123, quantity: 1), "ReplaceOrder", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.SpotApi.Trading.AmendOrderAsync("ETHUSDT", newQuantity: 5.0m, orderId: 123), "AmendOrder");
             await tester.ValidateAsync(client => client.SpotApi.Trading.GetOrderAsync("ETHUSDT", 123), "GetOrder");
             await tester.ValidateAsync(client => client.SpotApi.Trading.GetOpenOrdersAsync("ETHUSDT"), "GetOpenOrders");
             await tester.ValidateAsync(client => client.SpotApi.Trading.GetOrdersAsync("ETHUSDT"), "GetOrders");
@@ -209,7 +206,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -255,7 +252,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -299,7 +296,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -341,7 +338,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -364,7 +361,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -398,7 +395,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -439,7 +436,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -467,7 +464,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -514,7 +511,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -545,7 +542,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -563,7 +560,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -583,7 +580,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -601,7 +598,7 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
@@ -623,36 +620,36 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
             }));
             var tester = new RestRequestValidator<BinanceRestClient>(client, "Endpoints/General/SimpleEarn", "https://api.binance.com", IsAuthenticated);
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetAccountAsync(),"GetAccount");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleProductsAsync(),"GetFlexibleProducts");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedProductsAsync(),"GetLockedProducts");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleProductPositionsAsync(),"GetFlexibleProductPositions");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedProductPositionsAsync(),"GetLockedProductPositions");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexiblePersonalQuotaLeftAsync("123"),"GetFlexiblePersonalQuotaLeft");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedPersonalQuotaLeftAsync("123"),"GetLockedPersonalQuotaLeft");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.SubscribeFlexibleProductAsync("123", 1),"SubscribeFlexibleProduct");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.SubscribeLockedProductAsync("123", 1),"SubscribeLockedProduct");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.RedeemFlexibleProductAsync("123"),"RedeemFlexibleProduct");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.RedeemLockedProductAsync("123"),"RedeemLockedProduct");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.SetFlexibleAutoSubscribeAsync("123", true),"SetFlexibleAutoSubscribe");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.SetLockedAutoSubscribeAsync("123", true),"SetLockedAutoSubscribe");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleSubscriptionPreviewAsync("123", 1),"GetFlexibleSubscriptionPreview");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedSubscriptionPreviewAsync("123", 1),"GetLockedSubscriptionPreview");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.SetLockedRedeemOptionAsync("123", RedeemDestination.Flexible),"SetLockedRedeemOption");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleSubscriptionRecordsAsync(),"GetFlexibleSubscriptionRecords");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedSubscriptionRecordsAsync(),"GetLockedSubscriptionRecords");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleRedemptionRecordsAsync(),"GetFlexibleRedemptionRecords");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedRedemptionRecordsAsync(),"GetLockedRedemptionRecords");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleRewardRecordsAsync(RewardType.All),"GetFlexibleRewardRecords");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedRewardRecordsAsync(),"GetLockedRewardRecords");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetCollateralRecordsAsync("123"),"GetCollateralRecords");
-            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetRateHistoryAsync("123"),"GetRateHistory");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetAccountAsync(), "GetAccount");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleProductsAsync(), "GetFlexibleProducts");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedProductsAsync(), "GetLockedProducts");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleProductPositionsAsync(), "GetFlexibleProductPositions");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedProductPositionsAsync(), "GetLockedProductPositions");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexiblePersonalQuotaLeftAsync("123"), "GetFlexiblePersonalQuotaLeft");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedPersonalQuotaLeftAsync("123"), "GetLockedPersonalQuotaLeft");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.SubscribeFlexibleProductAsync("123", 1), "SubscribeFlexibleProduct");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.SubscribeLockedProductAsync("123", 1), "SubscribeLockedProduct");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.RedeemFlexibleProductAsync("123"), "RedeemFlexibleProduct");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.RedeemLockedProductAsync("123"), "RedeemLockedProduct");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.SetFlexibleAutoSubscribeAsync("123", true), "SetFlexibleAutoSubscribe");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.SetLockedAutoSubscribeAsync("123", true), "SetLockedAutoSubscribe");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleSubscriptionPreviewAsync("123", 1), "GetFlexibleSubscriptionPreview");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedSubscriptionPreviewAsync("123", 1), "GetLockedSubscriptionPreview");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.SetLockedRedeemOptionAsync("123", RedeemDestination.Flexible), "SetLockedRedeemOption");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleSubscriptionRecordsAsync(), "GetFlexibleSubscriptionRecords");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedSubscriptionRecordsAsync(), "GetLockedSubscriptionRecords");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleRedemptionRecordsAsync(), "GetFlexibleRedemptionRecords");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedRedemptionRecordsAsync(), "GetLockedRedemptionRecords");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetFlexibleRewardRecordsAsync(RewardType.All), "GetFlexibleRewardRecords");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetLockedRewardRecordsAsync(), "GetLockedRewardRecords");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetCollateralRecordsAsync("123"), "GetCollateralRecords");
+            await tester.ValidateAsync(client => client.GeneralApi.SimpleEarn.GetRateHistoryAsync("123"), "GetRateHistory");
         }
 
         [Test]
@@ -663,25 +660,25 @@ namespace Binance.Net.UnitTests
 
             var client = new BinanceRestClient(null, logger, Options.Create(new BinanceRestOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
                 OutputOriginalData = true,
                 AutoTimestamp = false,
                 RateLimiterEnabled = false,
             }));
             var tester = new RestRequestValidator<BinanceRestClient>(client, "Endpoints/General/Mining", "https://api.binance.com", IsAuthenticated);
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningCoinListAsync(),"GetMiningCoinList", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningAlgorithmListAsync(),"GetMiningAlgorithmList", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMinerDetailsAsync("sha256", "test", "bhdc1.16A10404B"),"GetMinerDetails", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMinerListAsync("sha256", "test"),"GetMinerList", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningRevenueListAsync("sha256", "test"),"GetMiningRevenueList", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningOtherRevenueListAsync("sha256", "test"),"GetMiningOtherRevenueList", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningStatisticsAsync("sha256", "test"),"GetMiningStatistics", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningAccountListAsync("sha256", "test"),"GetMiningAccountList", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetHashrateResaleListAsync(),"GetHashrateResaleList", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetHashrateResaleDetailsAsync(168, "test"),"GetHashrateResaleDetails", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.PlaceHashrateResaleRequestAsync("test", "sha256", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow, "S19Pro", 100000000),"PlaceHashrateResaleRequest", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.CancelHashrateResaleRequestAsync(168, "test"),"CancelHashrateResaleRequest", nestedJsonProperty: "data");
-            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningAccountEarningsAsync("sha256"),"GetMiningAccountEarnings", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningCoinListAsync(), "GetMiningCoinList", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningAlgorithmListAsync(), "GetMiningAlgorithmList", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMinerDetailsAsync("sha256", "test", "bhdc1.16A10404B"), "GetMinerDetails", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMinerListAsync("sha256", "test"), "GetMinerList", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningRevenueListAsync("sha256", "test"), "GetMiningRevenueList", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningOtherRevenueListAsync("sha256", "test"), "GetMiningOtherRevenueList", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningStatisticsAsync("sha256", "test"), "GetMiningStatistics", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningAccountListAsync("sha256", "test"), "GetMiningAccountList", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetHashrateResaleListAsync(), "GetHashrateResaleList", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetHashrateResaleDetailsAsync(168, "test"), "GetHashrateResaleDetails", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.PlaceHashrateResaleRequestAsync("test", "sha256", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow, "S19Pro", 100000000), "PlaceHashrateResaleRequest", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.CancelHashrateResaleRequestAsync(168, "test"), "CancelHashrateResaleRequest", nestedJsonProperty: "data");
+            await tester.ValidateAsync(client => client.GeneralApi.Mining.GetMiningAccountEarningsAsync("sha256"), "GetMiningAccountEarnings", nestedJsonProperty: "data");
         }
 
         // Staking tests (placeholder) 

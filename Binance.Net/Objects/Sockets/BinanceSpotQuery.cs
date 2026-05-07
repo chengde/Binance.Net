@@ -2,6 +2,7 @@
 using CryptoExchange.Net.Clients;
 using CryptoExchange.Net.Sockets;
 using CryptoExchange.Net.Sockets.Default;
+using CryptoExchange.Net.Sockets.Default.Routing;
 
 namespace Binance.Net.Objects.Sockets
 {
@@ -13,7 +14,6 @@ namespace Binance.Net.Objects.Sockets
         {
             _client = client;
             MessageRouter = MessageRouter.CreateWithoutTopicFilter<T>(request.Id.ToString(), HandleMessage);
-            MessageMatcher = MessageMatcher.Create<T>(request.Id.ToString(), HandleMessage);
         }
 
         public CallResult<T> HandleMessage(SocketConnection connection, DateTime receiveTime, string? originalData, T message)
@@ -27,6 +27,12 @@ namespace Binance.Net.Objects.Sockets
                     {
                         RetryAfter = message.Error.Data!.RetryAfter
                     }, originalData);
+                }
+
+                if (message.Error!.Code == -2035)
+                {
+                    // Duplicate subscription, treat as success as it handled correctly internally
+                    return new CallResult<T>(message, originalData, null);
                 }
 
                 return new CallResult<T>(new ServerError(message.Error!.Code.ToString(), _client.GetErrorInfo(message.Error!.Code, message.Error!.Message)), originalData);

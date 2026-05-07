@@ -1,5 +1,6 @@
 ﻿using Binance.Net.Objects.Internal;
 using CryptoExchange.Net.Sockets;
+using CryptoExchange.Net.Sockets.Default.Routing;
 
 namespace Binance.Net.Objects.Sockets
 {
@@ -8,7 +9,6 @@ namespace Binance.Net.Objects.Sockets
         public BinanceSystemQuery(BinanceSocketRequest request, bool authenticated, int weight = 1) : base(request, authenticated, weight)
         {
             MessageRouter = MessageRouter.CreateWithoutHandler<T>(request.Id.ToString());
-            MessageMatcher = MessageMatcher.Create<T>(request.Id.ToString());
         }
     }
 }

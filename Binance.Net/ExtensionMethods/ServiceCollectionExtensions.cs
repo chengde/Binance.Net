@@ -5,10 +5,10 @@ using Binance.Net.Interfaces.Clients;
 using Binance.Net.Objects.Options;
 using Binance.Net.SymbolOrderBooks;
 using CryptoExchange.Net.Clients;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.DependencyInjection;
 using CryptoExchange.Net.Interfaces.Clients;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -18,7 +18,8 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Add services such as the IBinanceRestClient and IBinanceSocketClient. Configures the services based on the provided configuration.
+        /// Add services such as the IBinanceRestClient and IBinanceSocketClient. Configures the services based on the provided configuration.<br />
+        /// See <see href="https://github.com/JKorf/Binance.Net/blob/master/Examples/example-config.json" /> for an example of how to set up the configuration.
         /// </summary>
         /// <param name="services">The service collection</param>
         /// <param name="configuration">The configuration(section) containing the options</param>
@@ -31,7 +32,15 @@ namespace Microsoft.Extensions.DependencyInjection
             // Reset environment so we know if they're overridden
             options.Rest.Environment = null!;
             options.Socket.Environment = null!;
-            configuration.Bind(options);
+
+            try
+            {
+                configuration.Bind(options);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException("Invalid configuration provided", ex);
+            }
 
             if (options.Rest == null || options.Socket == null)
                 throw new ArgumentException("Options null");
@@ -95,18 +104,16 @@ namespace Microsoft.Extensions.DependencyInjection
             }).ConfigurePrimaryHttpMessageHandler((serviceProvider) =>
             {
                 var options = serviceProvider.GetRequiredService<IOptions<BinanceRestOptions>>().Value;
-                return LibraryHelpers.CreateHttpClientMessageHandler(options.Proxy, options.HttpKeepAliveInterval);
-            });
+                return LibraryHelpers.CreateHttpClientMessageHandler(options);
+            }).SetHandlerLifetime(Timeout.InfiniteTimeSpan);
             services.Add(new ServiceDescriptor(typeof(IBinanceSocketClient), x => { return new BinanceSocketClient(x.GetRequiredService<IOptions<BinanceSocketOptions>>(), x.GetRequiredService<ILoggerFactory>()); }, socketClientLifeTime ?? ServiceLifetime.Singleton));
 
-            services.AddTransient<ICryptoRestClient, CryptoRestClient>();
-            services.AddSingleton<ICryptoSocketClient, CryptoSocketClient>();
             services.AddTransient<IBinanceOrderBookFactory, BinanceOrderBookFactory>();
             services.AddTransient<IBinanceTrackerFactory, BinanceTrackerFactory>();
             services.AddTransient<ITrackerFactory, BinanceTrackerFactory>();
             services.AddSingleton<IBinanceUserClientProvider, BinanceUserClientProvider>(x =>
             new BinanceUserClientProvider(
-                x.GetRequiredService<HttpClient>(),
+                x.GetRequiredService<IHttpClientFactory>().CreateClient(typeof(IBinanceRestClient).Name),
                 x.GetRequiredService<ILoggerFactory>(),
                 x.GetRequiredService<IOptions<BinanceRestOptions>>(),
                 x.GetRequiredService<IOptions<BinanceSocketOptions>>()));

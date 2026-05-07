@@ -1,7 +1,6 @@
 ﻿using Binance.Net.Clients.MessageHandlers;
 using Binance.Net.Enums;
 using Binance.Net.Interfaces.Clients.CoinFuturesApi;
-using Binance.Net.Objects;
 using Binance.Net.Objects.Internal;
 using Binance.Net.Objects.Models.Futures;
 using Binance.Net.Objects.Options;
@@ -15,7 +14,7 @@ using System.Net.Http.Headers;
 namespace Binance.Net.Clients.CoinFuturesApi
 {
     /// <inheritdoc cref="IBinanceRestClientCoinFuturesApi" />
-    internal partial class BinanceRestClientCoinFuturesApi : RestApiClient, IBinanceRestClientCoinFuturesApi
+    internal partial class BinanceRestClientCoinFuturesApi : RestApiClient<BinanceEnvironment, BinanceAuthenticationProvider, BinanceCredentials>, IBinanceRestClientCoinFuturesApi
     {
         #region fields 
         /// <inheritdoc />
@@ -26,8 +25,6 @@ namespace Binance.Net.Clients.CoinFuturesApi
         internal BinanceFuturesCoinExchangeInfo? _exchangeInfo;
         internal DateTime? _lastExchangeInfoUpdate;
         protected override IRestMessageHandler MessageHandler { get; } = new BinanceRestMessageHandler(BinanceErrors.FuturesErrors);
-
-        internal static TimeSyncState _timeSyncState = new TimeSyncState("Coin Futures Api");
         protected override ErrorMapping ErrorMapping => BinanceErrors.FuturesErrors;
 
         #endregion
@@ -61,10 +58,9 @@ namespace Binance.Net.Clients.CoinFuturesApi
         #endregion
 
         /// <inheritdoc />
-        protected override AuthenticationProvider CreateAuthenticationProvider(ApiCredentials credentials)
+        protected override BinanceAuthenticationProvider CreateAuthenticationProvider(BinanceCredentials credentials)
             => new BinanceAuthenticationProvider(credentials);
 
-        protected override IStreamMessageAccessor CreateAccessor() => new SystemTextJsonStreamMessageAccessor(SerializerOptions.WithConverters(BinanceExchange._serializerContext));
         protected override IMessageSerializer CreateSerializer() => new SystemTextJsonMessageSerializer(SerializerOptions.WithConverters(BinanceExchange._serializerContext));
 
         /// <inheritdoc />
@@ -222,7 +218,7 @@ namespace Binance.Net.Clients.CoinFuturesApi
             if (!result && result.Error!.ErrorType == ErrorType.InvalidTimestamp && (ApiOptions.AutoTimestamp ?? ClientOptions.AutoTimestamp))
             {
                 _logger.Log(LogLevel.Debug, "Received Invalid Timestamp error, triggering new time sync");
-                _timeSyncState.LastSyncTime = DateTime.MinValue;
+                TimeOffsetManager.ResetRestUpdateTime(ClientName);
             }
             return result;
         }
@@ -236,7 +232,7 @@ namespace Binance.Net.Clients.CoinFuturesApi
             if (!result && result.Error!.ErrorType == ErrorType.InvalidTimestamp && (ApiOptions.AutoTimestamp ?? ClientOptions.AutoTimestamp))
             {
                 _logger.Log(LogLevel.Debug, "Received Invalid Timestamp error, triggering new time sync");
-                _timeSyncState.LastSyncTime = DateTime.MinValue;
+                TimeOffsetManager.ResetRestUpdateTime(ClientName);
             }
             return result;
         }
@@ -245,30 +241,7 @@ namespace Binance.Net.Clients.CoinFuturesApi
         protected override Task<WebCallResult<DateTime>> GetServerTimestampAsync()
             => ExchangeData.GetServerTimeAsync();
 
-        /// <inheritdoc />
-        public override TimeSyncInfo? GetTimeSyncInfo()
-            => new TimeSyncInfo(_logger, (ApiOptions.AutoTimestamp ?? ClientOptions.AutoTimestamp), ApiOptions.TimestampRecalculationInterval ?? ClientOptions.TimestampRecalculationInterval, _timeSyncState);
-
-        /// <inheritdoc />
-        public override TimeSpan? GetTimeOffset()
-            => _timeSyncState.TimeOffset;
-
         public IBinanceRestClientCoinFuturesApiShared SharedClient => this;
 
-        private BinanceRateLimitError GetRateLimitError(IMessageAccessor accessor)
-        {
-            if (!accessor.IsValid)
-                return new BinanceRateLimitError(accessor.GetOriginalString());
-
-            var code = accessor.GetValue<int?>(MessagePath.Get().Property("code"));
-            var msg = accessor.GetValue<string>(MessagePath.Get().Property("msg"));
-            if (msg == null)
-                return new BinanceRateLimitError(accessor.GetOriginalString());
-
-            if (code == null)
-                return new BinanceRateLimitError(msg);
-
-            return new BinanceRateLimitError(code.Value, msg);
-        }
     }
 }

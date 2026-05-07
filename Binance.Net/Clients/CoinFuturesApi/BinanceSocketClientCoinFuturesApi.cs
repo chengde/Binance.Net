@@ -20,25 +20,10 @@ using CryptoExchange.Net.Sockets.HighPerf;
 namespace Binance.Net.Clients.CoinFuturesApi
 {
     /// <inheritdoc cref="IBinanceSocketClientCoinFuturesApi" />
-    internal partial class BinanceSocketClientCoinFuturesApi : SocketApiClient, IBinanceSocketClientCoinFuturesApi
+    internal partial class BinanceSocketClientCoinFuturesApi : SocketApiClient<BinanceEnvironment, BinanceAuthenticationProvider, BinanceCredentials>, IBinanceSocketClientCoinFuturesApi
     {
         #region fields
-        private static readonly MessagePath _idPath = MessagePath.Get().Property("id");
-        private static readonly MessagePath _streamPath = MessagePath.Get().Property("stream");
-        private static readonly MessagePath _ePath = MessagePath.Get().Property("data").Property("e");
-
         protected override ErrorMapping ErrorMapping => BinanceErrors.FuturesErrors;
-
-        private readonly HashSet<string> _userEvents = new HashSet<string>
-        {
-            "ACCOUNT_CONFIG_UPDATE",
-            "MARGIN_CALL",
-            "ACCOUNT_UPDATE",
-            "ORDER_TRADE_UPDATE",
-            "listenKeyExpired",
-            "STRATEGY_UPDATE",
-            "GRID_UPDATE"
-        };
         #endregion
 
         /// <inheritdoc />
@@ -70,11 +55,9 @@ namespace Binance.Net.Clients.CoinFuturesApi
         #endregion 
 
         /// <inheritdoc />
-        protected override AuthenticationProvider CreateAuthenticationProvider(ApiCredentials credentials)
+        protected override BinanceAuthenticationProvider CreateAuthenticationProvider(BinanceCredentials credentials)
             => new BinanceAuthenticationProvider(credentials);
 
-
-        protected override IByteMessageAccessor CreateAccessor(WebSocketMessageType type) => new SystemTextJsonByteMessageAccessor(SerializerOptions.WithConverters(BinanceExchange._serializerContext));
         protected override IMessageSerializer CreateSerializer() => new SystemTextJsonMessageSerializer(SerializerOptions.WithConverters(BinanceExchange._serializerContext));
         public override ISocketMessageHandler CreateMessageConverter(WebSocketMessageType type) => new BinanceSocketCoinFuturesMessageHandler();
         public IBinanceSocketClientCoinFuturesApiShared SharedClient => this;
@@ -83,25 +66,7 @@ namespace Binance.Net.Clients.CoinFuturesApi
         public override string FormatSymbol(string baseAsset, string quoteAsset, TradingMode tradingMode, DateTime? deliverTime = null)
                 => BinanceExchange.FormatSymbol(baseAsset, quoteAsset, tradingMode, deliverTime);
 
-        #region methods
-
-        /// <inheritdoc />
-        public override string? GetListenerIdentifier(IMessageAccessor message)
-        {
-            var id = message.GetValue<int?>(_idPath);
-            if (id != null)
-                return id.ToString();
-
-            var stream = message.GetValue<string>(_streamPath); ;
-            var e = message.GetValue<string>(_ePath);
-            if (e != null && _userEvents.Contains(e))
-                return stream + e;
-
-            return stream;
-        }
-
-        #endregion
-
+        
         internal async Task<CallResult<BinanceResponse<T>>> QueryAsync<T>(string url, string method, Dictionary<string, object> parameters, bool authenticated = false, bool sign = false, int weight = 1, CancellationToken ct = default)
         {
             if (authenticated)
@@ -109,15 +74,10 @@ namespace Binance.Net.Clients.CoinFuturesApi
                 if (AuthenticationProvider == null)
                     throw new InvalidOperationException("No credentials provided for authenticated endpoint");
 
-                var authProvider = (BinanceAuthenticationProvider)AuthenticationProvider;
                 if (sign)
-                {
-                    parameters = authProvider.AuthenticateSocketParameters(parameters);
-                }
+                    parameters = AuthenticationProvider.ProcessRequest(this, parameters);
                 else
-                {
-                    parameters.Add("apiKey", authProvider.ApiKey);
-                }
+                    parameters.Add("apiKey", AuthenticationProvider.Key);
             }
 
             var request = new BinanceSocketQuery
@@ -175,9 +135,5 @@ namespace Binance.Net.Clients.CoinFuturesApi
         {
             return base.SubscribeAsync(url.AppendPath("stream"), subscription, ct);
         }
-
-
-        /// <inheritdoc />
-        protected override Task<Query?> GetAuthenticationRequestAsync(SocketConnection connection) => Task.FromResult<Query?>(null);
     }
 }

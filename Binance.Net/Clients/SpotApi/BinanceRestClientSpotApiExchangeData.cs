@@ -600,7 +600,7 @@ namespace Binance.Net.Clients.SpotApi
         #region Query Isolated Margin Tier Data
 
         /// <inheritdoc />
-        public async Task<WebCallResult<BinanceIsolatedMarginTier[]>> GetIsolatedMarginTierDataAsync(string symbol, int? tier = null, int? receiveWindow = null, CancellationToken ct = default)
+        public async Task<WebCallResult<BinanceIsolatedMarginTierData[]>> GetIsolatedMarginTierDataAsync(string symbol, int? tier = null, int? receiveWindow = null, CancellationToken ct = default)
         {
             var parameters = new ParameterCollection();
             parameters.Add("symbol", symbol);
@@ -608,7 +608,7 @@ namespace Binance.Net.Clients.SpotApi
             parameters.AddOptionalParameter("recvWindow", receiveWindow?.ToString(CultureInfo.InvariantCulture) ?? _baseClient.ClientOptions.ReceiveWindow.TotalMilliseconds.ToString(CultureInfo.InvariantCulture));
 
             var request = _definitions.GetOrCreate(HttpMethod.Get, "sapi/v1/margin/isolatedMarginTier", BinanceExchange.RateLimiter.SpotRestIp, 1, true);
-            return await _baseClient.SendAsync<BinanceIsolatedMarginTier[]>(request, parameters, ct).ConfigureAwait(false);
+            return await _baseClient.SendAsync<BinanceIsolatedMarginTierData[]>(request, parameters, ct).ConfigureAwait(false);
         }
 
         #endregion
@@ -684,5 +684,50 @@ namespace Binance.Net.Clients.SpotApi
         }
 
         #endregion
+
+        #region Get Execution Rules
+
+        /// <inheritdoc />
+        public async Task<WebCallResult<BinanceExecutionRules[]>> GetExecutionRulesAsync(string? symbol = null, SymbolStatus? status = null, CancellationToken ct = default)
+        {
+            var parameters = new ParameterCollection();
+            parameters.AddOptional("symbol", symbol);
+            parameters.AddOptionalEnum("status", status);
+            var request = _definitions.GetOrCreate(HttpMethod.Get, "/api/v3/executionRules", BinanceExchange.RateLimiter.SpotRestIp, 1, false);
+            var result = await _baseClient.SendAsync<BinanceExecutionRulesWrapper>(request, parameters, ct, weight: symbol == null ? 40 : 2).ConfigureAwait(false);
+            return result.As<BinanceExecutionRules[]>(result.Data?.SymbolRules);
+        }
+
+        #endregion
+
+        #region Get Reference Price
+
+        /// <inheritdoc />
+        public async Task<WebCallResult<BinanceReferencePrice>> GetReferencePriceAsync(string symbol, CancellationToken ct = default)
+        {
+            var parameters = new ParameterCollection();
+            parameters.Add("symbol", symbol);
+            var request = _definitions.GetOrCreate(HttpMethod.Get, "/api/v3/referencePrice", BinanceExchange.RateLimiter.SpotRestIp, 1, false);
+            var result = await _baseClient.SendAsync<BinanceReferencePrice>(request, parameters, ct).ConfigureAwait(false);
+            return result;
+        }
+
+        #endregion
+
+        #region Get Reference Price Calculation
+
+        /// <inheritdoc />
+        public async Task<WebCallResult<BinanceReferencePriceCalculation>> GetReferencePriceCalculationAsync(string symbol, SymbolStatus? symbolStatus = null, CancellationToken ct = default)
+        {
+            var parameters = new ParameterCollection();
+            parameters.Add("symbol", symbol);
+            parameters.AddOptionalEnum("status", symbolStatus);
+            var request = _definitions.GetOrCreate(HttpMethod.Get, "/api/v3/referencePrice/calculation", BinanceExchange.RateLimiter.SpotRestIp, 1, false);
+            var result = await _baseClient.SendAsync<BinanceReferencePriceCalculation>(request, parameters, ct).ConfigureAwait(false);
+            return result;
+        }
+
+        #endregion
+
     }
 }

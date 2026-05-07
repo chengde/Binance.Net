@@ -1,11 +1,11 @@
-﻿using CryptoExchange.Net.Interfaces.Clients;
+using CryptoExchange.Net.Interfaces.Clients;
 
 namespace Binance.Net.Interfaces.Clients.UsdFuturesApi
 {
     /// <summary>
     /// Binance USD futures API endpoints
     /// </summary>
-    public interface IBinanceRestClientUsdFuturesApi : IRestApiClient, IDisposable
+    public interface IBinanceRestClientUsdFuturesApi : IRestApiClient<BinanceCredentials>, IDisposable
     {
         /// <summary>
         /// Endpoints related to account settings, info or actions
@@ -37,3 +37,4 @@ namespace Binance.Net.Interfaces.Clients.UsdFuturesApi
         public IBinanceRestClientUsdFuturesApiAgent Agent { get; }
     }
 }
+

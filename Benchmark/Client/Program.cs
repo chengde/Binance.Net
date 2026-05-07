@@ -1,4 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using Binance.Net.Clients;
@@ -46,29 +48,81 @@ namespace Binance.Net.Benchmark.Client
     }
 
     [MemoryDiagnoser]
-    [SimpleJob(RuntimeMoniker.Net48)]
-    [SimpleJob(RuntimeMoniker.Net10_0)]
+    [Config(typeof(Config))]
     public class SocketTester
     {
+        private class Config : ManualConfig
+        {
+            public Config()
+            {
+                var baseJob = Job.Default;
+
+                AddJob(
+                    baseJob
+                        .WithId("NET10_0 - 12.11.1")
+                        .WithNuGet("Binance.Net", "12.11.1")
+                        .WithIterationCount(20)
+                        .WithRuntime(CoreRuntime.Core10_0));
+                AddJob(
+                    baseJob
+                        .WithId("NET481 -  12.11.1")
+                        .WithNuGet("Binance.Net", "12.11.1")
+                        .WithIterationCount(20)
+                        .WithRuntime(ClrRuntime.Net48));
+
+                AddJob(
+                    baseJob
+                        .WithId("NET10_0 - 12.11.3")
+                        .WithNuGet("Binance.Net", "12.11.3")
+                        .WithIterationCount(20)
+                        .WithRuntime(CoreRuntime.Core10_0));
+                AddJob(
+                    baseJob
+                        .WithId("NET481 -  12.11.3")
+                        .WithNuGet("Binance.Net", "12.11.3")
+                        .WithIterationCount(20)
+                        .WithRuntime(ClrRuntime.Net48));
+            }
+        }
+
         public BinanceSocketClient SocketClient;
         public ILogger Logger;
 
-        private const int _socketUpdateReceiveTarget = 10000; // Should match the number in the server
+        private const int _socketUpdateReceiveTarget = 1000000; // Should match the number in the server
 
 
-        [GlobalSetup(Targets = [nameof(SocketUpdated)])]
-        public void SetupUpdatedDeserialization()
+        [GlobalSetup()]
+        public void Setup()
         {
-            CreateClient(true);
+            CreateClient();
         }
 
-        [GlobalSetup(Targets = [nameof(SocketLegacy), nameof(SocketHighPerf)])]
-        public void SetupLegacyDeserialization()
+        [IterationSetup(Target = nameof(Socket100Topics))]
+        public void IterationSetupMultiTopic()
         {
-            CreateClient(false);
+            Task.Run(async () =>
+            {
+                for (var i = 0; i < 10; i++)
+                {
+                    var subTopics = new string[10];
+                    for (var j = 0; j < 10; j++)
+                        subTopics[j] = "DUMMY" + i;
+
+                    _ = await SocketClient.SpotApi.ExchangeData.SubscribeToTickerUpdatesAsync(subTopics, x => { }, CancellationToken.None);
+                    _ = await SocketClient.SpotApi.ExchangeData.SubscribeToAggregatedTradeUpdatesAsync(subTopics, x => { }, CancellationToken.None);
+                    _ = await SocketClient.SpotApi.ExchangeData.SubscribeToBookTickerUpdatesAsync(subTopics, x => { }, CancellationToken.None);
+                    _ = await SocketClient.SpotApi.ExchangeData.SubscribeToOrderBookUpdatesAsync(subTopics, null, x => { }, CancellationToken.None);
+                }
+            }).Wait();
         }
 
-        [Benchmark()]
+        [IterationCleanup(Target = nameof(Socket100Topics))]
+        public void IterationCleanUpMultiTopic()
+        {
+            SocketClient.SpotApi.UnsubscribeAllAsync().Wait();
+        }
+
+        //[Benchmark()]
         public async Task SocketHighPerf()
         {
             var waitEvent = new AsyncResetEvent(false, false);
@@ -86,7 +140,7 @@ namespace Binance.Net.Benchmark.Client
         }
 
         [Benchmark()]
-        public async Task SocketUpdated()
+        public async Task Socket1Topic()
         {
             var waitEvent = new AsyncResetEvent(false, false);
             var received = 0;
@@ -103,11 +157,17 @@ namespace Binance.Net.Benchmark.Client
         }
 
         [Benchmark()]
-        public async Task SocketLegacy()
+        public async Task Socket100Topics()
         {
             var waitEvent = new AsyncResetEvent(false, false);
             var received = 0;
-            var result = await SocketClient.SpotApi.ExchangeData.SubscribeToTradeUpdatesAsync(["ETHUSDT"], x =>
+            var topics = new string[100];
+            for (var i = 0; i < 100; i++)
+                topics[i] = "DUMMY";
+
+            topics[50] = "ETHUSDT";
+
+            var result = await SocketClient.SpotApi.ExchangeData.SubscribeToTradeUpdatesAsync(topics, x =>
             {
                 received++;
                 if (received == _socketUpdateReceiveTarget)
@@ -116,7 +176,6 @@ namespace Binance.Net.Benchmark.Client
             }, CancellationToken.None);
 
             await waitEvent.WaitAsync();
-            await result.Data.CloseAsync();
         }
 
         [GlobalCleanup]
@@ -125,15 +184,14 @@ namespace Binance.Net.Benchmark.Client
             SocketClient.Dispose();
         }
 
-        private void CreateClient(bool enableNewDeserialization)
+        private void CreateClient()
         {
             var logger = new LoggerFactory();
             logger.AddProvider(new TraceLoggerProvider(LogLevel.Information));
-            var env = BinanceEnvironment.CreateCustom("Benchmark", "http://localhost:57589", "ws://localhost:57589", "", "", "", "", "", "", "", "");
+            var env = BinanceEnvironment.CreateCustom("Benchmark", "http://localhost:5000", "ws://localhost:5000", "", "", "", "", "", "", "", "");
             SocketClient = new BinanceSocketClient(Options.Create(new BinanceSocketOptions
             {
                 ReconnectPolicy = ReconnectPolicy.Disabled,
-                UseUpdatedDeserialization = enableNewDeserialization,
                 RateLimiterEnabled = false,
                 Environment = env
             }), logger);
@@ -146,14 +204,14 @@ namespace Binance.Net.Benchmark.Client
         {
             // For manual testing:
 
-            //var test = new Tester();
+            //var test = new SocketTester();
             //test.SetupUpdatedDeserialization();
             //Console.ReadLine();
             //Console.WriteLine("Starting");
             //var sw = Stopwatch.StartNew();
-            //for (var i = 0; i < 100; i++)
+            //for (var i = 0; i < 1; i++)
             //{
-            //    test.SocketHighPerf().Wait();
+            //    test.Socket100Topics().Wait();
             //}
             //sw.Stop();
             //Console.WriteLine($"Finished in {sw.ElapsedMilliseconds} ms");

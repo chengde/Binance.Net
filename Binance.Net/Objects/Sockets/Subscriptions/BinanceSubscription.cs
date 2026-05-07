@@ -1,6 +1,7 @@
 ﻿using Binance.Net.Objects.Internal;
 using CryptoExchange.Net.Sockets;
 using CryptoExchange.Net.Sockets.Default;
+using CryptoExchange.Net.Sockets.Default.Routing;
 
 namespace Binance.Net.Objects.Sockets.Subscriptions
 {
@@ -21,7 +22,6 @@ namespace Binance.Net.Objects.Sockets.Subscriptions
             IndividualSubscriptionCount = topics.Count;
 
             MessageRouter = MessageRouter.CreateWithoutTopicFilter<T>(topics, DoHandleMessage);
-            MessageMatcher = MessageMatcher.Create<T>(topics, DoHandleMessage);
         }
 
         /// <inheritdoc />

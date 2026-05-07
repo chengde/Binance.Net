@@ -17,18 +17,16 @@ namespace Binance.Net.UnitTests
     [TestFixture]
     public class SocketSubscriptionTests
     {
-        [TestCase(false)]
-        [TestCase(true)]
-        public async Task ValidateConcurrentSpotSubscriptions(bool newDeserialization)
+        [Test]
+        public async Task ValidateConcurrentSpotSubscriptions()
         {
             var logger = new LoggerFactory();
             logger.AddProvider(new TraceLoggerProvider());
 
             var client = new BinanceSocketClient(Options.Create(new BinanceSocketOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
-                OutputOriginalData = true,
-                UseUpdatedDeserialization = newDeserialization
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
+                OutputOriginalData = true
             }), logger);
 
             var tester = new SocketSubscriptionValidator<BinanceSocketClient>(client, "Subscriptions/Spot/ExchangeData", "https://api.binance.com", "data");
@@ -38,18 +36,16 @@ namespace Binance.Net.UnitTests
                 "Concurrent");
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public async Task ValidateConcurrentCoinFuturesSubscriptions(bool newDeserialization)
+        [Test]
+        public async Task ValidateConcurrentCoinFuturesSubscriptions()
         {
             var logger = new LoggerFactory();
             logger.AddProvider(new TraceLoggerProvider());
 
             var client = new BinanceSocketClient(Options.Create(new BinanceSocketOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
-                OutputOriginalData = true,
-                UseUpdatedDeserialization = newDeserialization
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
+                OutputOriginalData = true
             }), logger);
 
             var tester = new SocketSubscriptionValidator<BinanceSocketClient>(client, "Subscriptions/CoinFutures", "https://api.binance.com", "data");
@@ -59,18 +55,16 @@ namespace Binance.Net.UnitTests
                 "Concurrent");
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public async Task ValidateConcurrentUsdFuturesSubscriptions(bool newDeserialization)
+        [Test]
+        public async Task ValidateConcurrentUsdFuturesSubscriptions()
         {
             var logger = new LoggerFactory();
             logger.AddProvider(new TraceLoggerProvider());
 
             var client = new BinanceSocketClient(Options.Create(new BinanceSocketOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
-                OutputOriginalData = true,
-                UseUpdatedDeserialization = newDeserialization
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
+                OutputOriginalData = true
             }), logger);
 
             var tester = new SocketSubscriptionValidator<BinanceSocketClient>(client, "Subscriptions/UsdFutures", "https://api.binance.com", "data");
@@ -80,17 +74,15 @@ namespace Binance.Net.UnitTests
                 "Concurrent");
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public async Task ValidateSpotExchangeDataSubscriptions(bool newDeserialization)
+        [Test]
+        public async Task ValidateSpotExchangeDataSubscriptions()
         {
             var logger = new LoggerFactory();
             logger.AddProvider(new TraceLoggerProvider());
 
             var client = new BinanceSocketClient(Options.Create(new BinanceSocketOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
-                UseUpdatedDeserialization = newDeserialization
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456")
             }), logger);
             var tester = new SocketSubscriptionValidator<BinanceSocketClient>(client, "Subscriptions/Spot/ExchangeData", "https://api.binance.com", "data");
             await tester.ValidateAsync<BinanceStreamTrade>((client, handler) => client.SpotApi.ExchangeData.SubscribeToTradeUpdatesAsync("BTCUSDT", handler), "Trades");
@@ -103,40 +95,36 @@ namespace Binance.Net.UnitTests
             await tester.ValidateAsync<IBinanceTick>((client, handler) => client.SpotApi.ExchangeData.SubscribeToTickerUpdatesAsync("BTCUSDT", handler), "Ticker");
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public async Task ValidateSpotAccountSubscriptions(bool newDeserialization)
+        [Test]
+        public async Task ValidateSpotAccountSubscriptions()
         {
             var logger = new LoggerFactory();
             logger.AddProvider(new TraceLoggerProvider());
 
             var client = new BinanceSocketClient(Options.Create(new BinanceSocketOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
-                OutputOriginalData = true,
-                UseUpdatedDeserialization = newDeserialization
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456"),
+                OutputOriginalData = true
             }), logger);
             var tester = new SocketSubscriptionValidator<BinanceSocketClient>(client, "Subscriptions/Spot/Account", "https://api.binance.com", "data");
-            await tester.ValidateAsync<BinanceStreamOrderUpdate>((client, handler) => client.SpotApi.Account.SubscribeToUserDataUpdatesAsync("123", onOrderUpdateMessage: handler), "Order");
-            await tester.ValidateAsync<BinanceStreamOrderList>((client, handler) => client.SpotApi.Account.SubscribeToUserDataUpdatesAsync("123", onOcoOrderUpdateMessage: handler), "OcoOrder");
-            await tester.ValidateAsync<BinanceStreamPositionsUpdate>((client, handler) => client.SpotApi.Account.SubscribeToUserDataUpdatesAsync("123", onAccountPositionMessage: handler), "AccountPosition");
-            await tester.ValidateAsync<BinanceStreamBalanceUpdate>((client, handler) => client.SpotApi.Account.SubscribeToUserDataUpdatesAsync("123", onAccountBalanceUpdate: handler), "Balance");
-            
+            await tester.ValidateAsync<BinanceStreamOrderUpdate>((client, handler) => client.SpotApi.Account.SubscribeToUserDataUpdatesAsync(onOrderUpdateMessage: handler), "Order", nestedJsonProperty: "event");
+            await tester.ValidateAsync<BinanceStreamOrderList>((client, handler) => client.SpotApi.Account.SubscribeToUserDataUpdatesAsync(onOcoOrderUpdateMessage: handler), "OcoOrder", nestedJsonProperty: "event");
+            await tester.ValidateAsync<BinanceStreamPositionsUpdate>((client, handler) => client.SpotApi.Account.SubscribeToUserDataUpdatesAsync(onAccountPositionMessage: handler), "AccountPosition", nestedJsonProperty: "event");
+            await tester.ValidateAsync<BinanceStreamBalanceUpdate>((client, handler) => client.SpotApi.Account.SubscribeToUserDataUpdatesAsync(onAccountBalanceUpdate: handler), "Balance", nestedJsonProperty: "event");
+
             await tester.ValidateAsync<BinanceMarginCallUpdate>((client, handler) => client.SpotApi.Account.SubscribeToUserRiskDataUpdatesAsync("123", onMarginCallUpdate: handler), "MarginCall");
             await tester.ValidateAsync<BinanceLiabilityUpdate>((client, handler) => client.SpotApi.Account.SubscribeToUserRiskDataUpdatesAsync("123", onLiabilityUpdate: handler), "Liability");
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public async Task ValidateUsdFuturesSubscriptions(bool newDeserialization)
+        [Test]
+        public async Task ValidateUsdFuturesSubscriptions()
         {
             var logger = new LoggerFactory();
             logger.AddProvider(new TraceLoggerProvider());
 
             var client = new BinanceSocketClient(Options.Create(new BinanceSocketOptions
             {
-                ApiCredentials = new CryptoExchange.Net.Authentication.ApiCredentials("123", "456"),
-                UseUpdatedDeserialization = newDeserialization
+                ApiCredentials = new BinanceCredentials().WithHMAC("123", "456")
             }), logger);
             var tester = new SocketSubscriptionValidator<BinanceSocketClient>(client, "Subscriptions/UsdFutures", "https://fapi.binance.com", "data");
             await tester.ValidateAsync<BinanceFuturesUsdtStreamMarkPrice>((client, handler) => client.UsdFuturesApi.ExchangeData.SubscribeToMarkPriceUpdatesAsync("BTCUSDT", 1000, handler), "MarkPrice");
